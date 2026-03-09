@@ -433,20 +433,22 @@ const BloodCentres = () => {
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <nav className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/50">
-        <div className="container max-w-7xl mx-auto flex items-center justify-between h-16 px-4">
-          <Link to="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <MapPin className="w-5 h-5" />
-            <span className="font-medium">Back to Dashboard</span>
+        <div className="container max-w-7xl mx-auto flex items-center justify-between h-16 px-4 sm:px-6">
+          <Link to="/dashboard" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors min-w-0">
+            <MapPin className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium truncate hidden xs:inline">Back to Dashboard</span>
+            <span className="font-medium xs:hidden">Back</span>
           </Link>
-          <h1 className="font-display text-xl font-bold text-foreground">
-            Hospitals & Blood Banks
+          <h1 className="font-display text-lg sm:text-xl font-bold text-foreground truncate mx-2">
+            Hospitals & Banks
           </h1>
           <button
             onClick={openAllGoogleMaps}
-            className="flex items-center gap-2 px-4 py-2 bg-[#4285F4] text-white rounded-lg text-sm font-medium hover:bg-[#3367D6] transition-colors"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#4285F4] text-white rounded-lg text-sm font-medium hover:bg-[#3367D6] transition-colors flex-shrink-0"
           >
             <ExternalLink className="w-4 h-4" />
-            Open Google Maps
+            <span className="hidden sm:inline">Open Google Maps</span>
+            <span className="sm:hidden">Maps</span>
           </button>
         </div>
       </nav>
@@ -479,61 +481,66 @@ const BloodCentres = () => {
         )}
 
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search blood bank or hospital…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                <X className="w-4 h-4" />
-              </button>
-            )}
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search blood bank or hospital…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm h-11"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Refresh */}
+            <button
+              onClick={() => { setLoading(true); init(); }}
+              disabled={loading}
+              className="flex items-center justify-center gap-2 px-4 h-11 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              <span className="sm:hidden">Refresh List</span>
+            </button>
           </div>
 
-          {/* View toggle */}
-          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
-            {(["list", "map"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                {v === "list" ? <List className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
-                {v === "list" ? "List" : "Map"}
-              </button>
-            ))}
-          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* View toggle */}
+            <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
+              {(["list", "map"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  {v === "list" ? <List className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
+                  {v === "list" ? "List" : "Map"}
+                </button>
+              ))}
+            </div>
 
-          {/* Type filter */}
-          <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1">
-            {(["all", "blood_bank", "hospital"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setFilterType(t)}
-                className={`flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${filterType === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                {t === "blood_bank" && <Droplets className="w-3.5 h-3.5" />}
-                {t === "hospital" && <Building2 className="w-3.5 h-3.5" />}
-                {t === "all" ? "All" : t === "blood_bank" ? "Blood Banks" : "Hospitals"}
-              </button>
-            ))}
+            {/* Type filter */}
+            <div className="flex items-center gap-1 bg-card border border-border rounded-lg p-1 overflow-x-auto no-scrollbar">
+              {(["all", "blood_bank", "hospital"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setFilterType(t)}
+                  className={`flex-1 sm:flex-none whitespace-nowrap flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors ${filterType === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  {t === "blood_bank" && <Droplets className="w-3.5 h-3.5" />}
+                  {t === "hospital" && <Building2 className="w-3.5 h-3.5" />}
+                  {t === "all" ? "All" : t === "blood_bank" ? "Banks" : "Hospitals"}
+                </button>
+              ))}
+            </div>
           </div>
-
-          {/* Refresh */}
-          <button
-            onClick={() => { setLoading(true); init(); }}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
         </div>
 
         {/* Stats */}
@@ -571,9 +578,9 @@ const BloodCentres = () => {
 
         {/* ── MAP VIEW (Google Maps embed + list sidebar) ── */}
         {!loading && view === "map" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
             {/* Embedded Google Map */}
-            <div className="lg:col-span-2 rounded-xl overflow-hidden border border-border shadow-sm" style={{ height: 620 }}>
+            <div className="lg:col-span-2 rounded-2xl overflow-hidden border border-border shadow-soft h-[400px] sm:h-[500px] lg:h-[620px]">
               <iframe
                 title="Blood Banks Map"
                 width="100%"
@@ -587,10 +594,10 @@ const BloodCentres = () => {
             </div>
 
             {/* Sidebar */}
-            <div className="flex flex-col gap-3 max-h-[620px] overflow-y-auto pr-1">
+            <div className="flex flex-col gap-3 max-h-[500px] lg:max-h-[620px] overflow-y-auto pr-1">
               <div className="sticky top-0 bg-background/90 backdrop-blur pb-2 z-10">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                  {filteredCentres.length} locations
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest">
+                  {filteredCentres.length} locations found
                 </p>
               </div>
               {filteredCentres.map((centre) => (
@@ -599,25 +606,23 @@ const BloodCentres = () => {
                   href={googleMapsUrl(centre, userLocation ?? undefined)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-card border border-border rounded-lg p-3 hover:border-primary/60 hover:shadow-sm transition-all block"
+                  className="bg-card border border-border rounded-xl p-4 hover:border-primary/60 hover:shadow-soft transition-all block group"
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground text-sm leading-tight">{centre.name}</p>
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${centre.type === "blood_bank" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}>
-                        {centre.type === "blood_bank" ? "🩸 Blood Bank" : "🏥 Hospital"}
-                      </span>
-                      {centre.rating && (
-                        <p className="text-xs text-yellow-600 mt-1 flex items-center gap-0.5">
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                          {centre.rating} ({centre.reviews})
-                        </p>
-                      )}
-                      {centre.distance !== undefined && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{centre.distance} km away</p>
-                      )}
+                      <p className="font-bold text-foreground text-sm leading-tight group-hover:text-primary transition-colors">{centre.name}</p>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-tighter sm:tracking-normal ${centre.type === "blood_bank" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}>
+                          {centre.type === "blood_bank" ? "Blood Bank" : "Hospital"}
+                        </span>
+                        {centre.distance !== undefined && (
+                          <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">{centre.distance} km</p>
+                        )}
+                      </div>
                     </div>
-                    <Navigation className="w-4 h-4 text-primary flex-shrink-0 mt-1" />
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-all">
+                      <Navigation className="w-4 h-4" />
+                    </div>
                   </div>
                 </a>
               ))}
@@ -646,7 +651,7 @@ const CentreCard = ({
       transition={{ delay: Math.min(index * 0.03, 0.5) }}
       className="bg-card/95 backdrop-blur-sm border border-border rounded-xl p-5 hover:shadow-soft transition-shadow"
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           {/* Title row */}
           <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -686,23 +691,23 @@ const CentreCard = ({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col gap-2 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row lg:flex-col gap-2 flex-shrink-0 w-full sm:w-auto mt-4 sm:mt-0">
           <a
             href={googleMapsUrl(centre, userLocation ?? undefined)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 bg-[#4285F4] text-white rounded-lg text-xs font-medium hover:bg-[#3367D6] transition-colors"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-[#4285F4] text-white rounded-lg text-sm font-semibold hover:bg-[#3367D6] transition-colors shadow-sm"
           >
-            <Navigation className="w-3.5 h-3.5" />
+            <Navigation className="w-4 h-4" />
             Directions
           </a>
           <a
             href={googleMapsUrl(centre)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 bg-secondary text-foreground rounded-lg text-xs font-medium hover:bg-secondary/80 transition-colors"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-secondary text-foreground rounded-lg text-sm font-semibold hover:bg-secondary/80 transition-colors"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-4 h-4" />
             View Map
           </a>
         </div>

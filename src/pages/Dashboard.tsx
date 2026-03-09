@@ -226,72 +226,92 @@ const Dashboard = () => {
       <nav className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/50">
         <div className="container max-w-6xl mx-auto flex items-center justify-between h-16 px-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
               <Heart className="w-4 h-4 text-primary-foreground" fill="currentColor" />
             </div>
-            <span className="font-display text-lg font-bold text-foreground">Dashboard</span>
+            <span className="font-display text-base sm:text-lg font-bold text-foreground">Dashboard</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Availability toggle — icon+label on sm+, dot-only on xs */}
             <button
               onClick={toggleAvailability}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 profile?.availability === 'available'
                   ? 'bg-green-100 text-green-700 hover:bg-green-200'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              <div className={`w-2 h-2 rounded-full ${
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                 profile?.availability === 'available' ? 'bg-green-600' : 'bg-gray-600'
               }`} />
-              {profile?.availability === 'available' ? 'Available' : 'Unavailable'}
+              <span className="hidden sm:inline">{profile?.availability === 'available' ? 'Available' : 'Unavailable'}</span>
             </button>
+            {/* Become a Donor — icon only on mobile */}
             <button
               onClick={() => setIsDonorModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
             >
-              <Heart className="w-4 h-4" fill="currentColor" />
-              Become a Donor
+              <Heart className="w-4 h-4 flex-shrink-0" fill="currentColor" />
+              <span className="hidden sm:inline">Become a Donor</span>
             </button>
+            {/* Sign out — icon only on mobile */}
             <button
               onClick={signOut}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+              className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary"
             >
-              <LogOut className="w-4 h-4" />
-              Sign Out
+              <LogOut className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline text-sm">Sign Out</span>
             </button>
           </div>
         </div>
       </nav>
 
-      <div className="container max-w-6xl mx-auto px-4 py-8">
+      <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-display text-3xl font-bold text-white">
-                Welcome back, {profile?.name || 'User'}!
-              </h1>
-            </div>
-            <div className="hidden md:flex items-center gap-6 text-sm">
+          {/* Welcome heading row */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight">
+              Welcome back, {profile?.name || 'User'}!
+            </h1>
+            {/* Stats strip — visible on sm+ */}
+            <div className="hidden sm:flex items-center gap-4 md:gap-6 text-sm">
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">{profile?.blood_credits || 0}</p>
-                <p className="text-white/70">Credits</p>
+                <p className="text-xl md:text-2xl font-bold text-white">{profile?.blood_credits || 0}</p>
+                <p className="text-white/70 text-xs md:text-sm">Credits</p>
               </div>
-              <div className="w-px h-12 bg-white/30" />
+              <div className="w-px h-10 md:h-12 bg-white/30" />
               <div className="text-center">
-                <p className="text-2xl font-bold text-white">{requests.length}</p>
-                <p className="text-white/70">Requests</p>
+                <p className="text-xl md:text-2xl font-bold text-white">{requests.length}</p>
+                <p className="text-white/70 text-xs md:text-sm">Requests</p>
               </div>
-              <div className="w-px h-12 bg-white/30" />
+              <div className="w-px h-10 md:h-12 bg-white/30" />
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-300">
+                <p className="text-xl md:text-2xl font-bold text-green-300">
                   {profile?.availability === 'available' ? '✓' : '—'}
                 </p>
-                <p className="text-white/70">Available</p>
+                <p className="text-white/70 text-xs md:text-sm">Available</p>
               </div>
+            </div>
+          </div>
+          {/* Mobile stats row (xs only) */}
+          <div className="flex sm:hidden items-center gap-4 mt-3">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xl font-bold text-white">{profile?.blood_credits || 0}</span>
+              <span className="text-white/70 text-xs">Credits</span>
+            </div>
+            <div className="w-px h-6 bg-white/30" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xl font-bold text-white">{requests.length}</span>
+              <span className="text-white/70 text-xs">Requests</span>
+            </div>
+            <div className="w-px h-6 bg-white/30" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xl font-bold text-green-300">{profile?.availability === 'available' ? '✓' : '—'}</span>
+              <span className="text-white/70 text-xs">Available</span>
             </div>
           </div>
         </motion.div>
@@ -330,7 +350,7 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -434,7 +454,7 @@ const Dashboard = () => {
           className="mt-8"
         >
           <h2 className="font-display text-2xl font-bold text-white mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <Link to="/blood-centres">
               <button className="w-full bg-primary text-primary-foreground rounded-xl p-6 hover:opacity-90 transition-opacity text-left group">
                 <div className="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -496,7 +516,7 @@ const Dashboard = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <AnimatePresence>
                 {incomingRequests.map((request) => (
                   <BloodRequestCard

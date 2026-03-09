@@ -131,24 +131,24 @@ const Auth = () => {
     }
   };
 
-  const inputCls = "w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all";
+  const inputCls = "w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground text-sm sm:text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md"
       >
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 justify-center mb-8">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <Heart className="w-5 h-5 text-primary-foreground" fill="currentColor" />
+        <Link to="/" className="flex items-center gap-3 justify-center mb-8">
+          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-emergency">
+            <Heart className="w-6 h-6 text-primary-foreground" fill="currentColor" />
           </div>
-          <span className="font-display text-2xl font-bold text-foreground">Instant Blood Connect</span>
+          <span className="font-display text-2xl font-bold text-foreground tracking-tight">Blood Connect</span>
         </Link>
 
-        <div className="bg-card rounded-2xl border border-border p-8 shadow-card">
+        <div className="bg-card rounded-3xl border border-border/50 p-6 sm:p-10 shadow-elevated">
           {/* Header */}
           <h2 className="font-display text-2xl font-bold text-foreground text-center mb-1">
             {isSignUp ? "Create Account" : "Welcome Back"}

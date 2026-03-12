@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, User, MapPin, Droplets, LogOut, Clock, Phone, Edit, Activity, AlertCircle, Save, X, Search, Bell, Users, Eye } from "lucide-react";
+import { Heart, User, MapPin, Droplets, LogOut, Clock, Phone, Edit, Activity, AlertCircle, Save, X, Search, Bell, 
+Users, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -213,105 +214,85 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Red Background */}
-      <div 
+      <div
         className="fixed inset-0 z-0"
         style={{
           background: 'linear-gradient(135deg, #c0030d 0%, #8B0000 60%, #5a0000 100%)',
         }}
       />
-      
+
       {/* Content Overlay */}
       <div className="relative z-10">
       {/* Navbar */}
       <nav className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/50">
         <div className="container max-w-6xl mx-auto flex items-center justify-between h-16 px-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Heart className="w-4 h-4 text-primary-foreground" fill="currentColor" />
             </div>
-            <span className="font-display text-base sm:text-lg font-bold text-foreground">Dashboard</span>
+            <span className="font-display text-lg font-bold text-foreground">Dashboard</span>
           </Link>
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Availability toggle — icon+label on sm+, dot-only on xs */}
+          <div className="flex items-center gap-4">
             <button
               onClick={toggleAvailability}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${   
                 profile?.availability === 'available'
                   ? 'bg-green-100 text-green-700 hover:bg-green-200'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+              <div className={`w-2 h-2 rounded-full ${
                 profile?.availability === 'available' ? 'bg-green-600' : 'bg-gray-600'
               }`} />
-              <span className="hidden sm:inline">{profile?.availability === 'available' ? 'Available' : 'Unavailable'}</span>
+              {profile?.availability === 'available' ? 'Available' : 'Unavailable'}
             </button>
-            {/* Become a Donor — icon only on mobile */}
             <button
               onClick={() => setIsDonorModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
             >
-              <Heart className="w-4 h-4 flex-shrink-0" fill="currentColor" />
-              <span className="hidden sm:inline">Become a Donor</span>
+              <Heart className="w-4 h-4" fill="currentColor" />
+              Become a Donor
             </button>
-            {/* Sign out — icon only on mobile */}
             <button
               onClick={signOut}
-              className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
             >
-              <LogOut className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden sm:inline text-sm">Sign Out</span>
+              <LogOut className="w-4 h-4" />
+              Sign Out
             </button>
           </div>
         </div>
       </nav>
 
-      <div className="container max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="container max-w-6xl mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 sm:mb-8"
+          className="mb-8"
         >
-          {/* Welcome heading row */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight">
-              Welcome back, {profile?.name || 'User'}!
-            </h1>
-            {/* Stats strip — visible on sm+ */}
-            <div className="hidden sm:flex items-center gap-4 md:gap-6 text-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="font-display text-3xl font-bold text-white">
+                Welcome back, {profile?.name || 'User'}!
+              </h1>
+            </div>
+            <div className="hidden md:flex items-center gap-6 text-sm">
               <div className="text-center">
-                <p className="text-xl md:text-2xl font-bold text-white">{profile?.blood_credits || 0}</p>
-                <p className="text-white/70 text-xs md:text-sm">Credits</p>
+                <p className="text-2xl font-bold text-white">{profile?.blood_credits || 0}</p>
+                <p className="text-white/70">Credits</p>
               </div>
-              <div className="w-px h-10 md:h-12 bg-white/30" />
+              <div className="w-px h-12 bg-white/30" />
               <div className="text-center">
-                <p className="text-xl md:text-2xl font-bold text-white">{requests.length}</p>
-                <p className="text-white/70 text-xs md:text-sm">Requests</p>
+                <p className="text-2xl font-bold text-white">{requests.length}</p>
+                <p className="text-white/70">Requests</p>
               </div>
-              <div className="w-px h-10 md:h-12 bg-white/30" />
+              <div className="w-px h-12 bg-white/30" />
               <div className="text-center">
-                <p className="text-xl md:text-2xl font-bold text-green-300">
+                <p className="text-2xl font-bold text-green-300">
                   {profile?.availability === 'available' ? '✓' : '—'}
                 </p>
-                <p className="text-white/70 text-xs md:text-sm">Available</p>
+                <p className="text-white/70">Available</p>
               </div>
-            </div>
-          </div>
-          {/* Mobile stats row (xs only) */}
-          <div className="flex sm:hidden items-center gap-4 mt-3">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xl font-bold text-white">{profile?.blood_credits || 0}</span>
-              <span className="text-white/70 text-xs">Credits</span>
-            </div>
-            <div className="w-px h-6 bg-white/30" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-xl font-bold text-white">{requests.length}</span>
-              <span className="text-white/70 text-xs">Requests</span>
-            </div>
-            <div className="w-px h-6 bg-white/30" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-xl font-bold text-green-300">{profile?.availability === 'available' ? '✓' : '—'}</span>
-              <span className="text-white/70 text-xs">Available</span>
             </div>
           </div>
         </motion.div>
@@ -329,13 +310,13 @@ const Dashboard = () => {
                 <h3 className="font-display text-lg font-semibold text-foreground mb-3">
                   Donor Visibility Status
                 </h3>
-                <DonorStatusBadge 
+                <DonorStatusBadge
                   profile={{
                     availability: profile.availability,
                     visibility: profile.visibility,
                     verified: profile.verified,
                     last_donation_date: profile.last_donation_date,
-                  }} 
+                  }}
                   showDescription={true}
                 />
               </div>
@@ -350,7 +331,7 @@ const Dashboard = () => {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -367,7 +348,7 @@ const Dashboard = () => {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <User className="w-6 h-6" />
                 </div>
-                <button 
+                <button
                   onClick={() => setIsEditOpen(true)}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
@@ -436,7 +417,7 @@ const Dashboard = () => {
               </div>
               <h3 className="font-display font-semibold text-foreground text-lg">Last Donation</h3>
               <p className="text-muted-foreground text-sm mt-1">
-                {profile?.last_donation_date 
+                {profile?.last_donation_date
                   ? new Date(profile.last_donation_date).toLocaleDateString()
                   : "No donations yet"}
               </p>
@@ -454,7 +435,7 @@ const Dashboard = () => {
           className="mt-8"
         >
           <h2 className="font-display text-2xl font-bold text-white mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link to="/blood-centres">
               <button className="w-full bg-primary text-primary-foreground rounded-xl p-6 hover:opacity-90 transition-opacity text-left group">
                 <div className="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -465,7 +446,7 @@ const Dashboard = () => {
               </button>
             </Link>
 
-            <button 
+            <button
               onClick={() => setIsRequestBloodOpen(true)}
               className="bg-card border-2 border-primary text-foreground rounded-xl p-6 hover:bg-primary/5 transition-colors text-left group"
             >
@@ -516,7 +497,7 @@ const Dashboard = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AnimatePresence>
                 {incomingRequests.map((request) => (
                   <BloodRequestCard
@@ -645,12 +626,12 @@ const Dashboard = () => {
       </div>
 
       {/* Donor Registration Modal */}
-      <DonorRegistrationModal 
-        isOpen={isDonorModalOpen} 
+      <DonorRegistrationModal
+        isOpen={isDonorModalOpen}
         onClose={() => {
           setIsDonorModalOpen(false);
           fetchProfile(); // Refresh profile after registration
-        }} 
+        }}
       />
 
       {/* Public Profile Preview Modal */}

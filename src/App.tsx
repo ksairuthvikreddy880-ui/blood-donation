@@ -7,9 +7,9 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import NotFound from "./pages/NotFound";
-import BloodCentres from "./pages/BloodCentres";
 import BloodRequests from "./pages/BloodRequests";
+import BloodCentres from "./pages/BloodCentres";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -25,14 +25,14 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/blood-centres" element={<ProtectedRoute><BloodCentres /></ProtectedRoute>} />
             <Route path="/blood-requests" element={<ProtectedRoute><BloodRequests /></ProtectedRoute>} />
+            <Route path="/blood-centres" element={<ProtectedRoute><BloodCentres /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

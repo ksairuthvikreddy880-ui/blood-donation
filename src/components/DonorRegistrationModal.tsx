@@ -200,16 +200,16 @@ const DonorRegistrationModal = ({ isOpen, onClose }: DonorRegistrationModalProps
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        Email Address <span className="text-red-500">*</span>
+                        Email Address
                       </label>
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        required
+                        className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring opacity-60 cursor-not-allowed"
                         disabled
                       />
+                      <p className="text-xs text-muted-foreground mt-1">Auto-filled from your account</p>
                     </div>
                   </div>
 

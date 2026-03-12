@@ -95,6 +95,18 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          toast({
+            title: "Invalid Email",
+            description: "Please enter a valid email address",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
         // If phone is provided and SMS not verified yet, send SMS
         if (phone && !verificationStep) {
           await sendSMS(phone);
@@ -168,6 +180,17 @@ const Auth = () => {
           navigate("/dashboard");
         } else {
           // Email login
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            toast({
+              title: "Invalid Email",
+              description: "Please enter a valid email address",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+
           const { data, error } = await supabase.auth.signInWithPassword({ 
             email, 
             password 
@@ -328,7 +351,7 @@ const Auth = () => {
                         placeholder="Full Name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        required={isSignUp}
+                        required
                         className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
@@ -337,7 +360,7 @@ const Auth = () => {
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <input
                         type="tel"
-                        placeholder="Phone Number (for SMS verification)"
+                        placeholder="Phone Number (Optional)"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -367,7 +390,7 @@ const Auth = () => {
                         placeholder="Email address"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        required={!isSignUp && loginMethod === 'email'}
+                        required
                         className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
@@ -379,7 +402,7 @@ const Auth = () => {
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        required={!isSignUp && loginMethod === 'email'}
+                        required
                         minLength={6}
                         className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       />

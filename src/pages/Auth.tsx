@@ -24,7 +24,11 @@ const Auth = () => {
   const sendSMS = async (phoneNumber: string) => {
     setSmsLoading(true);
     try {
-      const response = await fetch('/api/send-verification-code', {
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? '/api/send-verification-code'
+        : '/api/send-verification-code';
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: phoneNumber }),
@@ -32,9 +36,10 @@ const Auth = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to send SMS');
+        throw new Error(error.error || error.message || 'Failed to send SMS');
       }
 
+      const data = await response.json();
       setSmsSent(true);
       toast({
         title: "SMS Sent",
@@ -55,7 +60,11 @@ const Auth = () => {
   const verifyCode = async (code: string) => {
     setSmsLoading(true);
     try {
-      const response = await fetch('/api/verify-code', {
+      const apiUrl = process.env.NODE_ENV === 'production'
+        ? '/api/verify-code'
+        : '/api/verify-code';
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, code }),
@@ -63,7 +72,7 @@ const Auth = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Invalid verification code');
+        throw new Error(error.error || error.message || 'Invalid verification code');
       }
 
       return true;

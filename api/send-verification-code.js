@@ -26,24 +26,29 @@ export default async function handler(req, res) {
     const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
 
     if (!accountSid || !authToken || !twilioPhone) {
+      console.error('Missing Twilio credentials:', {
+        accountSid: !!accountSid,
+        authToken: !!authToken,
+        twilioPhone: !!twilioPhone
+      });
       return res.status(500).json({ error: 'Twilio credentials not configured' });
     }
 
     // Generate 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Store code in memory (in production, use a database)
-    // For now, we'll send it via SMS
+    // Create Twilio client
     const client = twilio(accountSid, authToken);
 
-    await client.messages.create({
+    // Send SMS
+    const message = await client.messages.create({
       body: `Your Blood Donation Platform verification code is: ${code}. Valid for 10 minutes.`,
       from: twilioPhone,
       to: phone
     });
 
-    // Store verification code (you should use a database in production)
-    // For demo purposes, we'll return it (NOT SECURE - for testing only)
+    console.log('SMS sent successfully:', message.sid);
+
     return res.status(200).json({ 
       success: true, 
       message: 'Verification code sent',
@@ -52,7 +57,8 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Error sending verification code:', error);
     return res.status(500).json({ 
-      error: error.message || 'Failed to send verification code' 
+      error: error.message || 'Failed to send verification code',
+      details: error.toString()
     });
   }
 }

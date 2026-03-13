@@ -125,20 +125,48 @@ const Auth = () => {
         }
 
         // Create account after SMS verification (if phone provided)
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { name, phone },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}/auth`,
           },
         });
-        if (error) throw error;
-        
-        toast({
-          title: "Account Created",
-          description: "Check your email to verify your account.",
-        });
+        if (signUpError) throw signUpError;
+
+        // Auto-login after signup
+        if (signUpData.user) {
+          const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (loginError) {
+            // If auto-login fails, show success message and ask user to login
+            toast({
+              title: "Account Created",
+              description: "Your account has been created. Please sign in with your credentials.",
+            });
+          } else if (loginData.session) {
+            // Auto-login successful
+            toast({
+              title: "Welcome!",
+              description: "Your account has been created and you're now signed in.",
+            });
+            navigate("/dashboard");
+            setEmail("");
+            setPassword("");
+            setName("");
+            setPhone("");
+            setVerificationCode("");
+            setVerificationStep(false);
+            setSmsSent(false);
+            return;
+          }
+        }
+
+        // Reset form for manual login
         setEmail("");
         setPassword("");
         setName("");
@@ -416,7 +444,7 @@ const Auth = () => {
                   className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-display font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-                  {isSignUp && phone && !smsSent ? "Send Verification Code" : (isSignUp ? "Create Account" : loginMethod === 'phone' ? "Send OTP" : "Sign In")}
+                  {isSignUp && phone && !smsSent ? "Send Verification Code" : (isSignUp ? "Create Account & Sign In" : loginMethod === 'phone' ? "Send OTP" : "Sign In")}
                 </button>
               </>
             )}

@@ -94,7 +94,7 @@ const DonorRegistrationModal = ({ isOpen, onClose }: DonorRegistrationModalProps
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -102,74 +102,74 @@ const DonorRegistrationModal = ({ isOpen, onClose }: DonorRegistrationModalProps
             className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-elevated"
           >
             {success ? (
-              <div className="p-12 text-center">
+              <div className="p-6 sm:p-12 text-center">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", duration: 0.5 }}
                 >
-                  <CheckCircle className="w-20 h-20 text-green-600 mx-auto mb-6" />
+                  <CheckCircle className="w-16 sm:w-20 h-16 sm:h-20 text-green-600 mx-auto mb-4 sm:mb-6" />
                 </motion.div>
-                <h2 className="font-display text-3xl font-bold text-foreground mb-3">
+                <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-3">
                   Thank You for Joining!
                 </h2>
-                <p className="text-muted-foreground text-lg">
+                <p className="text-muted-foreground text-base sm:text-lg">
                   You are now registered as a blood donor.
                 </p>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                   You can update your availability anytime from your dashboard.
                 </p>
               </div>
             ) : (
               <>
                 {/* Header */}
-                <div className="sticky top-0 bg-card border-b border-border p-6 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Heart className="w-5 h-5 text-primary" fill="currentColor" />
+                <div className="sticky top-0 bg-card border-b border-border p-4 sm:p-6 flex items-center justify-between">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 sm:w-10 h-8 sm:h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Heart className="w-4 sm:w-5 h-4 sm:h-5 text-primary" fill="currentColor" />
                     </div>
                     <div>
-                      <h2 className="font-display text-2xl font-bold text-foreground">
+                      <h2 className="font-display text-lg sm:text-2xl font-bold text-foreground">
                         Become a Donor
                       </h2>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         Join our life-saving community
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={onClose}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
                   >
-                    <X className="w-6 h-6" />
+                    <X className="w-5 sm:w-6 h-5 sm:h-6" />
                   </button>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                   {/* Full Name */}
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                       required
                     />
                   </div>
 
                   {/* Blood Group */}
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                       Blood Group <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={formData.bloodGroup}
                       onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                       required
                     >
                       <option value="">Select Blood Group</option>
@@ -185,28 +185,28 @@ const DonorRegistrationModal = ({ isOpen, onClose }: DonorRegistrationModalProps
                   </div>
 
                   {/* Phone & Email */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                         Phone Number <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                         Email Address
                       </label>
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring opacity-60 cursor-not-allowed"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring opacity-60 cursor-not-allowed text-sm"
                         disabled
                       />
                       <p className="text-xs text-muted-foreground mt-1">Auto-filled from your account</p>
@@ -214,79 +214,79 @@ const DonorRegistrationModal = ({ isOpen, onClose }: DonorRegistrationModalProps
                   </div>
 
                   {/* City & Pincode */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                         City <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         value={formData.city}
                         onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                         Area / Pincode
                       </label>
                       <input
                         type="text"
                         value={formData.pincode}
                         onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                       />
                     </div>
                   </div>
 
                   {/* Last Donation Date */}
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
+                    <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                       Last Donation Date (Optional)
                     </label>
                     <input
                       type="date"
                       value={formData.lastDonationDate}
                       onChange={(e) => setFormData({ ...formData, lastDonationDate: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                     />
                   </div>
 
                   {/* Availability Toggle */}
-                  <div className="flex items-center justify-between p-4 bg-secondary rounded-xl">
+                  <div className="flex items-center justify-between p-3 sm:p-4 bg-secondary rounded-xl">
                     <div>
-                      <p className="font-medium text-foreground">Availability Status</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground text-sm">Availability Status</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         Mark yourself as available for donations
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, availability: !formData.availability })}
-                      className={`relative w-14 h-8 rounded-full transition-colors ${
+                      className={`relative w-12 sm:w-14 h-7 sm:h-8 rounded-full transition-colors min-h-[44px] min-w-[44px] flex items-center ${
                         formData.availability ? "bg-green-600" : "bg-gray-300"
                       }`}
                     >
                       <span
-                        className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform ${
-                          formData.availability ? "translate-x-6" : ""
+                        className={`absolute top-1 left-1 w-5 sm:w-6 h-5 sm:h-6 bg-white rounded-full transition-transform ${
+                          formData.availability ? "translate-x-5 sm:translate-x-6" : ""
                         }`}
                       />
                     </button>
                   </div>
 
                   {/* Consent Checkbox */}
-                  <div className="flex items-start gap-3 p-4 bg-secondary rounded-xl">
+                  <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 bg-secondary rounded-xl">
                     <input
                       type="checkbox"
                       id="consent"
                       checked={formData.consent}
                       onChange={(e) => setFormData({ ...formData, consent: e.target.checked })}
-                      className="mt-1 w-4 h-4 text-primary border-border rounded focus:ring-2 focus:ring-ring"
+                      className="mt-1 w-4 h-4 text-primary border-border rounded focus:ring-2 focus:ring-ring min-h-[44px] min-w-[44px] flex items-center justify-center"
                       required
                     />
-                    <label htmlFor="consent" className="text-sm text-foreground">
+                    <label htmlFor="consent" className="text-xs sm:text-sm text-foreground">
                       I agree to be contacted for blood donation requests and understand that my
                       information will be shared with verified recipients in emergency situations.{" "}
                       <span className="text-red-500">*</span>
@@ -297,10 +297,11 @@ const DonorRegistrationModal = ({ isOpen, onClose }: DonorRegistrationModalProps
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-display font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-display font-semibold text-base sm:text-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px]"
                   >
-                    {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-                    {loading ? "Registering..." : "Register as Donor"}
+                    {loading && <Loader2 className="w-4 sm:w-5 h-4 sm:h-5 animate-spin" />}
+                    <span className="hidden sm:inline">{loading ? "Registering..." : "Register as Donor"}</span>
+                    <span className="sm:hidden">{loading ? "Registering..." : "Register"}</span>
                   </button>
                 </form>
               </>

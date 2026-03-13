@@ -147,7 +147,7 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm">
           <div className="w-full h-full max-h-[90vh] flex items-center justify-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -156,53 +156,53 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
               className="bg-card border border-border rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-elevated"
             >
               {/* Header */}
-              <div className="flex-shrink-0 bg-card border-b border-border p-6 flex items-center justify-between rounded-t-2xl">
+              <div className="flex-shrink-0 bg-card border-b border-border p-4 sm:p-6 flex items-center justify-between rounded-t-2xl">
                 <div>
-                  <h2 className="font-display text-2xl font-bold text-foreground">
+                  <h2 className="font-display text-lg sm:text-2xl font-bold text-foreground">
                     Request Blood
                   </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     Fill in the details to find nearby donors
                   </p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 sm:w-6 h-5 sm:h-6" />
                 </button>
               </div>
 
               {/* Form - Scrollable */}
               <div className="flex-1 overflow-y-auto">
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                   {/* Patient Information */}
                   <div>
-                    <h3 className="font-display text-lg font-semibold text-foreground mb-4">
+                    <h3 className="font-display text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">
                       Patient Information
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           Patient Name <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value={formData.patientName}
                           onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           Blood Group Needed <span className="text-red-500">*</span>
                         </label>
                         <select
                           value={formData.bloodGroup}
                           onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                           required
                         >
                           <option value="">Select Blood Group</option>
@@ -218,7 +218,7 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           Units Required <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -227,19 +227,19 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
                           max="10"
                           value={formData.unitsRequired}
                           onChange={(e) => setFormData({ ...formData, unitsRequired: parseInt(e.target.value) })}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           Urgency Level <span className="text-red-500">*</span>
                         </label>
                         <select
                           value={formData.urgency}
                           onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                           required
                         >
                           <option value="normal">Scheduled</option>
@@ -252,32 +252,32 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
 
                   {/* Hospital Information */}
                   <div>
-                    <h3 className="font-display text-lg font-semibold text-foreground mb-4">
+                    <h3 className="font-display text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">
                       Hospital Information
                     </h3>
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           Hospital Name <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value={formData.hospitalName}
                           onChange={(e) => setFormData({ ...formData, hospitalName: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           Hospital Address <span className="text-red-500">*</span>
                         </label>
                         <textarea
                           value={formData.hospitalAddress}
                           onChange={(e) => setFormData({ ...formData, hospitalAddress: e.target.value })}
                           rows={2}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm"
                           required
                         />
                       </div>
@@ -286,32 +286,32 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
 
                   {/* Contact Information */}
                   <div>
-                    <h3 className="font-display text-lg font-semibold text-foreground mb-4">
+                    <h3 className="font-display text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">
                       Contact Information
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           Contact Person <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value={formData.contactPerson}
                           onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           Contact Phone <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="tel"
                           value={formData.contactPhone}
                           onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                           required
                         />
                       </div>
@@ -320,7 +320,7 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
 
                   {/* Location */}
                   <div>
-                    <h3 className="font-display text-lg font-semibold text-foreground mb-4">
+                    <h3 className="font-display text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">
                       Location
                     </h3>
                     
@@ -328,55 +328,57 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
                       type="button"
                       onClick={detectLocation}
                       disabled={detectingLocation}
-                      className="w-full mb-4 py-3 bg-primary/10 text-primary border-2 border-primary/20 rounded-xl font-medium hover:bg-primary/20 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full mb-3 sm:mb-4 py-3 bg-primary/10 text-primary border-2 border-primary/20 rounded-xl font-medium hover:bg-primary/20 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm min-h-[44px]"
                     >
                       {detectingLocation ? (
                         <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Detecting Location...
+                          <Loader2 className="w-4 sm:w-5 h-4 sm:h-5 animate-spin" />
+                          <span className="hidden sm:inline">Detecting Location...</span>
+                          <span className="sm:hidden">Detecting...</span>
                         </>
                       ) : (
                         <>
-                          <Navigation className="w-5 h-5" />
-                          Auto-Detect My Location
+                          <Navigation className="w-4 sm:w-5 h-4 sm:h-5" />
+                          <span className="hidden sm:inline">Auto-Detect My Location</span>
+                          <span className="sm:hidden">Auto-Detect</span>
                         </>
                       )}
                     </button>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           City <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value={formData.city}
                           onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           Pincode
                         </label>
                         <input
                           type="text"
                           value={formData.pincode}
                           onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
+                        <label className="block text-xs sm:text-sm font-medium text-foreground mb-2">
                           Search Radius (km)
                         </label>
                         <select
                           value={formData.radius}
                           onChange={(e) => setFormData({ ...formData, radius: parseInt(e.target.value) })}
-                          className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                         >
                           <option value={5}>5 km</option>
                           <option value={10}>10 km</option>
@@ -387,7 +389,7 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
                     </div>
 
                     {formData.latitude && formData.longitude && (
-                      <div className="mt-3 flex items-center gap-2 text-sm text-green-600">
+                      <div className="mt-3 flex items-center gap-2 text-xs sm:text-sm text-green-600">
                         <MapPin className="w-4 h-4" />
                         <span>Location detected successfully</span>
                       </div>
@@ -395,10 +397,10 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
                   </div>
 
                   {/* Important Notice */}
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <div className="text-sm text-blue-900">
+                  <div className="p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <AlertCircle className="w-4 sm:w-5 h-4 sm:h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-xs sm:text-sm text-blue-900">
                         <p className="font-medium mb-1">Important:</p>
                         <ul className="list-disc list-inside space-y-1">
                           <li>Only verified and eligible donors will be notified</li>
@@ -413,10 +415,11 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-4 bg-primary text-primary-foreground rounded-xl font-display font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-display font-semibold text-base sm:text-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 min-h-[44px]"
                   >
-                    {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-                    {loading ? "Submitting Request..." : "Submit Blood Request"}
+                    {loading && <Loader2 className="w-4 sm:w-5 h-4 sm:h-5 animate-spin" />}
+                    <span className="hidden sm:inline">{loading ? "Submitting Request..." : "Submit Blood Request"}</span>
+                    <span className="sm:hidden">{loading ? "Submitting..." : "Submit Request"}</span>
                   </button>
                 </form>
               </div>

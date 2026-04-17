@@ -4,7 +4,7 @@
 
 You're seeing this error in Vercel console:
 ```
-nzdcucibnzzunxtljmto.supabase.co/auth/v1/otp:1 Failed to load resource: the server responded with a status of 401
+YOUR_PROJECT_ID.supabase.co/auth/v1/otp:1 Failed to load resource: the server responded with a status of 401
 ```
 
 ## Root Cause

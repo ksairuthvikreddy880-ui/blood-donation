@@ -430,7 +430,12 @@ const BloodCentres = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div
+      className="min-h-screen bg-background"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
       {/* Nav */}
       <nav className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/50">
         <div className="container max-w-7xl mx-auto flex items-center justify-between h-16 px-4 sm:px-6">
@@ -630,7 +635,7 @@ const BloodCentres = () => {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

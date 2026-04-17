@@ -1,0 +1,377 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Heart, ArrowLeft, MapPin, Clock, Loader2,
+  Navigation, CheckCircle, Building2, Droplets, Phone, MessageCircle, X,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/db";
+import { haversine } from "@/lib/donorRanking";
+import type { BloodRequest } from "@/integrations/supabase/types";
+import LocationPicker from "@/components/LocationPicker";
+import type { LocationResult } from "@/hooks/useLocation";
+
+interface RequestWithDistance extends BloodRequest {
+  distanceKm: number | null;
+  requesterName?: string;
+}
+
+const URGENCY_STYLE: Record<string, string> = {
+  critical: "bg-red-100 text-red-700 border-red-200",
+  urgent:   "bg-orange-100 text-orange-700 border-orange-200",
+  normal:   "bg-blue-100 text-blue-700 border-blue-200",
+};
+
+export default function DonateBlood() {
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
+
+  const [requests, setRequests] = useState<RequestWithDistance[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [donorLat, setDonorLat] = useState<number | null>(profile?.latitude ?? null);
+  const [donorLon, setDonorLon] = useState<number | null>(profile?.longitude ?? null);
+  const [detectedAddress, setDetectedAddress] = useState("");
+  const [acceptedIds, setAcceptedIds] = useState<Set<string>>(new Set());
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  // Phone validation popup
+  const [showPhonePopup, setShowPhonePopup] = useState(false);
+  const [pendingRequest, setPendingRequest] = useState<RequestWithDistance | null>(null);
+  const [donorPhone, setDonorPhone] = useState(profile?.phone ?? "");
+  const [savingPhone, setSavingPhone] = useState(false);
+
+  const handleLocationDetected = (loc: LocationResult) => {
+    setDonorLat(loc.lat);
+    setDonorLon(loc.lon);
+    setDetectedAddress(loc.fullAddress);
+  };
+
+  useEffect(() => {
+    loadRequests();
+  }, [donorLat, donorLon]);
+
+  const loadRequests = async () => {
+    setLoading(true);
+    try {
+      // Fetch all pending/accepted requests (not own)
+      let query = (supabase as any)
+        .from("requests")
+        .select("*")
+        .in("status", ["pending", "accepted"])
+        .order("created_at", { ascending: false });
+
+      if (user) query = query.neq("user_id", user.id);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Calculate distance for each request and filter by radius
+      const enriched: RequestWithDistance[] = (data ?? [])
+        .map((req: BloodRequest) => {
+          let distanceKm: number | null = null;
+          if (donorLat && donorLon && req.latitude && req.longitude) {
+            distanceKm = Math.round(haversine(donorLat, donorLon, req.latitude, req.longitude) * 10) / 10;
+          }
+          return { ...req, distanceKm };
+        })
+        .filter((req: RequestWithDistance) => {
+          // If requester set a radius and we have distance, only show if within radius
+          if (req.distanceKm !== null) {
+            const radius = (req as any).radius_km ?? 50;
+            return req.distanceKm <= radius;
+          }
+          return true; // no location data — show anyway
+        })
+        .sort((a: RequestWithDistance, b: RequestWithDistance) => {
+          // Sort: critical first, then by distance
+          const urgencyOrder: Record<string, number> = { critical: 0, urgent: 1, normal: 2 };
+          const uDiff = (urgencyOrder[a.urgency] ?? 2) - (urgencyOrder[b.urgency] ?? 2);
+          if (uDiff !== 0) return uDiff;
+          if (a.distanceKm !== null && b.distanceKm !== null) return a.distanceKm - b.distanceKm;
+          return 0;
+        });
+
+      setRequests(enriched);
+    } catch (err: any) {
+      toast({ title: "Failed to load requests", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openWhatsApp = (req: RequestWithDistance, phone: string) => {
+    const requesterPhone = (req as any).requester_phone;
+    if (!requesterPhone) {
+      toast({ title: "Requester phone not available", variant: "destructive" });
+      return;
+    }
+    // Clean phone — remove spaces, dashes; ensure starts with country code
+    const cleaned = requesterPhone.replace(/[\s\-()]/g, "");
+    const number = cleaned.startsWith("+") ? cleaned.slice(1) : cleaned.startsWith("0") ? "91" + cleaned.slice(1) : cleaned;
+
+    const notes = (() => { try { return JSON.parse(req.notes ?? "{}"); } catch { return {}; } })();
+    const patientName = notes.patientName || "the patient";
+
+    const message = encodeURIComponent(
+      `Hi, I saw your blood request for ${req.blood_group} blood for ${patientName}. ` +
+      `I am available to donate and nearby. My phone: ${phone}. Please contact me.`
+    );
+
+    toast({ title: "📱 Opening WhatsApp to contact requester…" });
+    window.open(`https://wa.me/${number}?text=${message}`, "_blank");
+  };
+
+  const handleAccept = async (req: RequestWithDistance) => {
+    if (!user) return;
+
+    // Check donor has phone
+    const currentPhone = profile?.phone || donorPhone;
+    if (!currentPhone) {
+      setPendingRequest(req);
+      setShowPhonePopup(true);
+      return;
+    }
+
+    await doAccept(req, currentPhone);
+  };
+
+  const doAccept = async (req: RequestWithDistance, phone: string) => {
+    setAcceptingId(req.id);
+    try {
+      const { data: match } = await (supabase as any)
+        .from("matches")
+        .insert({ request_id: req.id, donor_id: user!.id, status: "pending" })
+        .select().single();
+
+      if (match) await db.matches.accept(match.id, req.id, user!.id);
+
+      setAcceptedIds(prev => new Set([...prev, req.id]));
+      toast({ title: "✅ Request accepted!" });
+
+      // Open WhatsApp
+      openWhatsApp(req, phone);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setAcceptingId(null);
+    }
+  };
+
+  const handlePhoneSubmit = async () => {
+    if (!donorPhone.trim() || !user || !pendingRequest) return;
+    setSavingPhone(true);
+    try {
+      await db.users.update(user.id, { phone: donorPhone });
+      setShowPhonePopup(false);
+      await doAccept(pendingRequest, donorPhone);
+      setPendingRequest(null);
+    } catch (err: any) {
+      toast({ title: "Error saving phone", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingPhone(false);
+    }
+  };
+
+  const parseNotes = (notes: string | null) => {
+    try { return JSON.parse(notes ?? "{}"); } catch { return {}; }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/50">
+        <div className="container max-w-5xl mx-auto flex items-center justify-between h-16 px-4">
+          <div className="flex items-center gap-3">
+            <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <Heart className="w-4 h-4 text-white" fill="currentColor" />
+              </div>
+              <span className="font-display text-lg font-bold text-foreground">Donate Blood</span>
+            </div>
+          </div>
+          <div className="w-72">
+            <LocationPicker onDetected={handleLocationDetected} compact />
+          </div>
+        </div>
+      </div>
+
+      <div className="container max-w-5xl mx-auto px-4 py-8">
+
+        {/* Info banner */}
+        <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl mb-6">
+          <Heart className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" fill="currentColor" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Blood requests near you</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {donorLat
+                ? "Showing requests within the radius set by each requester. Sorted by urgency then distance."
+                : "Detect your location to see requests within your area. Without location, all pending requests are shown."}
+            </p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="loader"><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/></div>
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="text-center py-20 bg-card border border-border rounded-2xl">
+            <Droplets className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <p className="font-display font-semibold text-foreground">No requests in your area</p>
+            <p className="text-sm text-muted-foreground mt-1">Check back later or expand your location range</p>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground mb-4">{requests.length} request{requests.length !== 1 ? "s" : ""} found</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <AnimatePresence>
+                {requests.map((req, idx) => {
+                  const notes = parseNotes(req.notes);
+                  const accepted = acceptedIds.has(req.id);
+
+                  return (
+                    <motion.div key={req.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.04 }}
+                      className={`bg-card border-2 rounded-2xl p-5 shadow-soft ${
+                        req.urgency === "critical" ? "border-red-200" :
+                        req.urgency === "urgent" ? "border-orange-200" : "border-border"
+                      }`}>
+
+                      {/* Top row */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                            <span className="font-display font-bold text-2xl text-primary">{req.blood_group}</span>
+                          </div>
+                          <div>
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${URGENCY_STYLE[req.urgency] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                              {req.urgency === "critical" ? "🚨 " : req.urgency === "urgent" ? "⚡ " : ""}
+                              {req.urgency.toUpperCase()}
+                            </span>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {req.units_needed} unit{req.units_needed !== 1 ? "s" : ""} needed
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
+                          req.status === "accepted" ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700"
+                        }`}>{req.status}</span>
+                      </div>
+
+                      {/* Details */}
+                      <div className="space-y-1.5 text-sm text-muted-foreground mb-4">
+                        {req.hospital_name && (
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-3.5 h-3.5 flex-shrink-0" /> {req.hospital_name}
+                          </div>
+                        )}
+                        {req.location && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {req.location}
+                          </div>
+                        )}
+                        {req.distanceKm !== null && (
+                          <div className="flex items-center gap-2 font-medium text-foreground">
+                            <Navigation className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
+                            {req.distanceKm} km from you
+                          </div>
+                        )}
+                        {notes.contactPhone && (
+                          <div className="flex items-center gap-2">
+                            📞 {notes.contactPhone}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                          {new Date(req.created_at).toLocaleString()}
+                        </div>
+                      </div>
+
+                      {/* Accept button */}
+                      {/* Accept / WhatsApp button */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleAccept(req)}
+                          disabled={accepted || acceptingId === req.id}
+                          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${
+                            accepted
+                              ? "bg-green-100 text-green-700 cursor-default"
+                              : "bg-primary text-primary-foreground hover:opacity-90"
+                          } disabled:opacity-60`}>
+                          {acceptingId === req.id
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : accepted
+                            ? <><CheckCircle className="w-4 h-4" /> Accepted</>
+                            : <><Heart className="w-4 h-4" fill="currentColor" /> I Can Donate</>}
+                        </button>
+                        {/* WhatsApp button — always visible if requester has phone */}
+                        {(req as any).requester_phone && (
+                          <button
+                            onClick={() => openWhatsApp(req, profile?.phone || donorPhone || "")}
+                            className="px-3 py-2.5 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-400 transition-colors flex items-center gap-1"
+                            title="Contact on WhatsApp">
+                            <MessageCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Phone number popup */}
+      <AnimatePresence>
+        {showPhonePopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm shadow-elevated"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display text-lg font-bold text-foreground">Enter Your Phone Number</h3>
+                <button onClick={() => setShowPhonePopup(false)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Your phone number is needed so the requester can contact you on WhatsApp.
+              </p>
+              <div className="relative mb-4">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="tel"
+                  value={donorPhone}
+                  onChange={e => setDonorPhone(e.target.value)}
+                  placeholder="+91 XXXXX XXXXX"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  autoFocus
+                />
+              </div>
+              <button
+                onClick={handlePhoneSubmit}
+                disabled={!donorPhone.trim() || savingPhone}
+                className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {savingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+                Save & Open WhatsApp
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

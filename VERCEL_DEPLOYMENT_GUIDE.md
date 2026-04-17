@@ -84,7 +84,7 @@ After adding environment variables:
 
 ### 401 Error from Supabase OTP
 
-**Problem:** `nzdcucibnzzunxtljmto.supabase.co/auth/v1/otp:1 Failed to load resource: 401`
+**Problem:** `YOUR_PROJECT_ID.supabase.co/auth/v1/otp:1 Failed to load resource: 401`
 
 **Solution:** This error is not from our code. It might be:
 1. A browser extension interfering with requests

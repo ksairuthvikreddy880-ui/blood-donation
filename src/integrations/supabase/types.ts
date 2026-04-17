@@ -1,337 +1,120 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
+export type UserRole = 'donor' | 'requester' | 'admin';
+export type RequestStatus = 'pending' | 'accepted' | 'fulfilled' | 'cancelled' | 'expired';
+export type UrgencyLevel = 'normal' | 'urgent' | 'critical';
+export type MatchStatus = 'pending' | 'accepted' | 'rejected' | 'completed';
+
+// Matches public.users table
+export interface UserProfile {
+  id: string;           // uuid PK (not auth.uid — use auth_id for that)
+  auth_id: string;      // references auth.users.id
+  full_name: string;
+  phone: string | null;
+  role: UserRole;
+  blood_group: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  is_available: boolean;
+  verified: boolean;
+  blood_credits: number;
+  last_donated_at: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Matches public.requests table
+export interface BloodRequest {
+  id: string;
+  user_id: string;       // auth.uid of requester
+  blood_group: string;
+  location: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  urgency: UrgencyLevel;
+  status: RequestStatus;
+  units_needed: number;
+  units_fulfilled: number;
+  hospital_name: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Matches public.matches table
+export interface Match {
+  id: string;
+  request_id: string;
+  donor_id: string;      // auth.uid of donor
+  status: MatchStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+// Matches public.donations table
+export interface Donation {
+  id: string;
+  donor_id: string;
+  request_id: string | null;
+  donated_at: string;
+  notes: string | null;
+  created_at: string;
+}
+
+// Matches public.notifications table
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: string;
+  is_read: boolean;
+  request_id: string | null;
+  created_at: string;
+}
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
-  }
+  __InternalSupabase: { PostgrestVersion: "14.1" };
   public: {
     Tables: {
-      blood_requests: {
-        Row: {
-          accepted_donor_id: string | null
-          blood_group: string
-          city: string | null
-          created_at: string
-          id: string
-          latitude: number | null
-          longitude: number | null
-          notes: string | null
-          radius_km: number
-          requester_id: string
-          status: Database["public"]["Enums"]["request_status"]
-          updated_at: string
-          urgency: Database["public"]["Enums"]["urgency_level"]
-        }
-        Insert: {
-          accepted_donor_id?: string | null
-          blood_group: string
-          city?: string | null
-          created_at?: string
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          notes?: string | null
-          radius_km?: number
-          requester_id: string
-          status?: Database["public"]["Enums"]["request_status"]
-          updated_at?: string
-          urgency?: Database["public"]["Enums"]["urgency_level"]
-        }
-        Update: {
-          accepted_donor_id?: string | null
-          blood_group?: string
-          city?: string | null
-          created_at?: string
-          id?: string
-          latitude?: number | null
-          longitude?: number | null
-          notes?: string | null
-          radius_km?: number
-          requester_id?: string
-          status?: Database["public"]["Enums"]["request_status"]
-          updated_at?: string
-          urgency?: Database["public"]["Enums"]["urgency_level"]
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          availability: Database["public"]["Enums"]["availability_status"]
-          avatar_url: string | null
-          blood_credits: number
-          blood_group: string | null
-          city: string | null
-          created_at: string
-          id: string
-          last_donation_date: string | null
-          latitude: number | null
-          longitude: number | null
-          name: string
-          phone: string | null
-          updated_at: string
-          user_id: string
-          verified: boolean
-        }
-        Insert: {
-          availability?: Database["public"]["Enums"]["availability_status"]
-          avatar_url?: string | null
-          blood_credits?: number
-          blood_group?: string | null
-          city?: string | null
-          created_at?: string
-          id?: string
-          last_donation_date?: string | null
-          latitude?: number | null
-          longitude?: number | null
-          name?: string
-          phone?: string | null
-          updated_at?: string
-          user_id: string
-          verified?: boolean
-        }
-        Update: {
-          availability?: Database["public"]["Enums"]["availability_status"]
-          avatar_url?: string | null
-          blood_credits?: number
-          blood_group?: string | null
-          city?: string | null
-          created_at?: string
-          id?: string
-          last_donation_date?: string | null
-          latitude?: number | null
-          longitude?: number | null
-          name?: string
-          phone?: string | null
-          updated_at?: string
-          user_id?: string
-          verified?: boolean
-        }
-        Relationships: []
-      }
-      ratings: {
-        Row: {
-          created_at: string
-          donor_id: string
-          feedback: string | null
-          id: string
-          rater_id: string
-          rating: number
-          request_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          donor_id: string
-          feedback?: string | null
-          id?: string
-          rater_id: string
-          rating: number
-          request_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          donor_id?: string
-          feedback?: string | null
-          id?: string
-          rater_id?: string
-          rating?: number
-          request_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ratings_request_id_fkey"
-            columns: ["request_id"]
-            isOneToOne: false
-            referencedRelation: "blood_requests"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_roles: {
-        Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-    }
+      users: {
+        Row: UserProfile;
+        Insert: Partial<UserProfile> & { auth_id: string };
+        Update: Partial<UserProfile>;
+        Relationships: [];
+      };
+      requests: {
+        Row: BloodRequest;
+        Insert: Omit<BloodRequest, 'id' | 'created_at' | 'updated_at'> & { id?: string };
+        Update: Partial<BloodRequest>;
+        Relationships: [];
+      };
+      matches: {
+        Row: Match;
+        Insert: Omit<Match, 'id' | 'created_at' | 'updated_at'> & { id?: string };
+        Update: Partial<Match>;
+        Relationships: [];
+      };
+      donations: {
+        Row: Donation;
+        Insert: Omit<Donation, 'id' | 'donated_at' | 'created_at'> & { id?: string };
+        Update: Partial<Donation>;
+        Relationships: [];
+      };
+      notifications: {
+        Row: AppNotification;
+        Insert: Omit<AppNotification, 'id' | 'created_at' | 'is_read'> & { id?: string };
+        Update: Partial<AppNotification>;
+        Relationships: [];
+      };
+    };
     Enums: {
-      app_role: "donor" | "recipient" | "admin"
-      availability_status: "available" | "available_soon" | "unavailable"
-      request_status:
-        | "pending"
-        | "accepted"
-        | "declined"
-        | "fulfilled"
-        | "expired"
-      urgency_level: "normal" | "urgent" | "critical"
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
-
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
-
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
-
-export type Tables<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
-    }
-    ? R
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
-
-export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
-
-export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {
-      app_role: ["donor", "recipient", "admin"],
-      availability_status: ["available", "available_soon", "unavailable"],
-      request_status: [
-        "pending",
-        "accepted",
-        "declined",
-        "fulfilled",
-        "expired",
-      ],
-      urgency_level: ["normal", "urgent", "critical"],
-    },
-  },
-} as const
+      user_role: UserRole;
+      request_status: RequestStatus;
+      urgency_level: UrgencyLevel;
+      match_status: MatchStatus;
+    };
+  };
+};

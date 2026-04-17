@@ -42,19 +42,18 @@ const DonorRegistrationModal = ({ isOpen, onClose }: DonorRegistrationModalProps
     setLoading(true);
 
     try {
-      // Update profile with donor information
-      const { error } = await supabase
-        .from("profiles")
+      // Update users table (new schema — replaces old profiles table)
+      const { error } = await (supabase as any)
+        .from("users")
         .update({
-          name: formData.fullName,
+          full_name: formData.fullName,
           blood_group: formData.bloodGroup,
           phone: formData.phone,
           city: formData.city,
-          last_donation_date: formData.lastDonationDate || null,
-          availability: formData.availability ? "available" : "unavailable",
-          verified: false, // Default to unverified
+          last_donated_at: formData.lastDonationDate || null,
+          is_available: formData.availability,
         })
-        .eq("user_id", user?.id);
+        .eq("auth_id", user?.id);
 
       if (error) throw error;
 

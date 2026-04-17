@@ -10,12 +10,21 @@ import Dashboard from "./pages/Dashboard";
 import BloodRequests from "./pages/BloodRequests";
 import BloodCentres from "./pages/BloodCentres";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
+import FindDonors from "./pages/FindDonors";
+import HospitalLogin from "./pages/HospitalLogin";
+import HospitalDashboard from "./pages/HospitalDashboard";
+import DonateBlood from "./pages/DonateBlood";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="loader"><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/></div>
+    </div>
+  );
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 };
@@ -31,6 +40,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/find-donors" element={<ProtectedRoute><FindDonors /></ProtectedRoute>} />
+            <Route path="/hospital-login" element={<HospitalLogin />} />
+            <Route path="/hospital-dashboard" element={<HospitalDashboard />} />
+            <Route path="/donate-blood" element={<ProtectedRoute><DonateBlood /></ProtectedRoute>} />
             <Route path="/blood-requests" element={<ProtectedRoute><BloodRequests /></ProtectedRoute>} />
             <Route path="/blood-centres" element={<ProtectedRoute><BloodCentres /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

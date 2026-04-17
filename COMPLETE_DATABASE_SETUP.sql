@@ -1,221 +1,149 @@
--- ============================================
--- COMPLETE DATABASE SETUP FOR BLOOD DONATION PLATFORM
--- Run this entire script in your Supabase SQL Editor
--- ============================================
+-- ============================================================
+-- INSTANT BLOOD CONNECT — Complete Database Setup
+-- Run this entire file in Supabase SQL Editor
+-- ============================================================
 
--- Create enum types
-CREATE TYPE public.app_role AS ENUM ('donor', 'recipient', 'admin');
-CREATE TYPE public.availability_status AS ENUM ('available', 'available_soon', 'unavailable');
-CREATE TYPE public.urgency_level AS ENUM ('normal', 'urgent', 'critical');
-CREATE TYPE public.request_status AS ENUM ('pending', 'accepted', 'declined', 'fulfilled', 'expired');
+-- ── Enums ────────────────────────────────────────────────────
+create type public.user_role         as enum ('donor', 'requester', 'admin');
+create type public.availability_status as enum ('available', 'unavailable', 'available_soon');
+create type public.request_status    as enum ('pending', 'accepted', 'fulfilled', 'cancelled', 'expired');
+create type public.urgency_level     as enum ('normal', 'urgent', 'critical');
+create type public.match_status      as enum ('pending', 'accepted', 'rejected', 'completed');
 
--- ============================================
--- PROFILES TABLE
--- ============================================
-CREATE TABLE public.profiles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
-  name TEXT NOT NULL DEFAULT '',
-  blood_group TEXT,
-  phone TEXT,
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  city TEXT,
-  last_donation_date DATE,
-  availability availability_status NOT NULL DEFAULT 'unavailable',
-  verified BOOLEAN NOT NULL DEFAULT false,
-  visibility TEXT DEFAULT 'public' CHECK (visibility IN ('public', 'private')),
-  blood_credits INTEGER NOT NULL DEFAULT 0,
-  avatar_url TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+-- ── profiles ─────────────────────────────────────────────────
+create table public.profiles (
+  id                uuid primary key default gen_random_uuid(),
+  user_id           uuid not null unique references auth.users(id) on delete cascade,
+  full_name         text not null default '',
+  phone             text,
+  blood_group       text,
+  city              text,
+  latitude          double precision,
+  longitude         double precision,
+  role              public.user_role not null default 'donor',
+  availability      public.availability_status not null default 'available',
+  is_available      boolean not null default true,
+  verified          boolean not null default false,
+  blood_credits     integer not null default 0,
+  last_donated_at   timestamptz,
+  avatar_url        text,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
 );
 
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view all profiles" ON public.profiles FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-
--- ============================================
--- USER ROLES TABLE
--- ============================================
-CREATE TABLE public.user_roles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  role app_role NOT NULL,
-  UNIQUE (user_id, role)
+-- ── requests ─────────────────────────────────────────────────
+create table public.requests (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  blood_group   text not null,
+  location      text,
+  latitude      double precision,
+  longitude     double precision,
+  urgency       public.urgency_level not null default 'normal',
+  status        public.request_status not null default 'pending',
+  units_needed  integer not null default 1,
+  units_fulfilled integer not null default 0,
+  hospital_name text,
+  notes         text,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
 );
 
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can read own roles" ON public.user_roles FOR SELECT TO authenticated USING (auth.uid() = user_id);
-
--- has_role function
-CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles WHERE user_id = _user_id AND role = _role
-  )
-$$;
-
--- Admin policies for user_roles
-CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL TO authenticated USING (public.has_role(auth.uid(), 'admin'));
-
--- ============================================
--- BLOOD REQUESTS TABLE
--- ============================================
-CREATE TABLE public.blood_requests (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  requester_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  blood_group TEXT NOT NULL,
-  urgency urgency_level NOT NULL DEFAULT 'normal',
-  radius_km INTEGER NOT NULL DEFAULT 10,
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  city TEXT,
-  status request_status NOT NULL DEFAULT 'pending',
-  accepted_donor_id UUID REFERENCES auth.users(id),
-  units_fulfilled INTEGER NOT NULL DEFAULT 0,
-  notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+-- ── matches ──────────────────────────────────────────────────
+create table public.matches (
+  id          uuid primary key default gen_random_uuid(),
+  request_id  uuid not null references public.requests(id) on delete cascade,
+  donor_id    uuid not null references auth.users(id) on delete cascade,
+  status      public.match_status not null default 'pending',
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  unique(request_id, donor_id)
 );
 
-ALTER TABLE public.blood_requests ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Authenticated users can view requests" ON public.blood_requests FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Users can create requests" ON public.blood_requests FOR INSERT TO authenticated WITH CHECK (auth.uid() = requester_id);
-CREATE POLICY "Requester can update own requests" ON public.blood_requests FOR UPDATE TO authenticated USING (auth.uid() = requester_id);
-
--- ============================================
--- DONOR ACCEPTANCES TABLE
--- ============================================
-CREATE TABLE public.donor_acceptances (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  request_id UUID REFERENCES public.blood_requests(id) ON DELETE CASCADE NOT NULL,
-  donor_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  status TEXT NOT NULL DEFAULT 'accepted' CHECK (status IN ('accepted', 'completed', 'cancelled')),
-  units_committed INTEGER NOT NULL DEFAULT 1,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (request_id, donor_id)
+-- ── donations ────────────────────────────────────────────────
+create table public.donations (
+  id          uuid primary key default gen_random_uuid(),
+  request_id  uuid references public.requests(id) on delete set null,
+  donor_id    uuid not null references auth.users(id) on delete cascade,
+  donated_at  timestamptz not null default now(),
+  notes       text
 );
 
-ALTER TABLE public.donor_acceptances ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Authenticated users can view acceptances" ON public.donor_acceptances FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Donors can create acceptances" ON public.donor_acceptances FOR INSERT TO authenticated WITH CHECK (auth.uid() = donor_id);
-CREATE POLICY "Donors can update own acceptances" ON public.donor_acceptances FOR UPDATE TO authenticated USING (auth.uid() = donor_id);
-
--- ============================================
--- RATINGS TABLE
--- ============================================
-CREATE TABLE public.ratings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  donor_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  rater_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  request_id UUID REFERENCES public.blood_requests(id) ON DELETE CASCADE,
-  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  feedback TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+-- ── notifications ────────────────────────────────────────────
+create table public.notifications (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  title       text not null,
+  message     text not null,
+  type        text not null default 'info',   -- info | match | accepted | completed
+  read        boolean not null default false,
+  request_id  uuid references public.requests(id) on delete set null,
+  created_at  timestamptz not null default now()
 );
 
-ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
+-- ── updated_at triggers ──────────────────────────────────────
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin new.updated_at = now(); return new; end; $$;
 
-CREATE POLICY "Authenticated users can view ratings" ON public.ratings FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Users can create ratings" ON public.ratings FOR INSERT TO authenticated WITH CHECK (auth.uid() = rater_id);
+create trigger trg_profiles_updated_at   before update on public.profiles    for each row execute function public.set_updated_at();
+create trigger trg_requests_updated_at   before update on public.requests    for each row execute function public.set_updated_at();
+create trigger trg_matches_updated_at    before update on public.matches     for each row execute function public.set_updated_at();
 
--- ============================================
--- FUNCTIONS
--- ============================================
+-- ── auto-create profile on signup ────────────────────────────
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (user_id, full_name, phone, role)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''),
+    coalesce(new.raw_user_meta_data->>'phone', null),
+    'donor'
+  );
+  return new;
+end; $$;
 
--- Auto-create profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  INSERT INTO public.profiles (user_id, name)
-  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'name', ''));
-  
-  -- Default role: donor
-  INSERT INTO public.user_roles (user_id, role)
-  VALUES (NEW.id, 'donor');
-  
-  RETURN NEW;
-END;
-$$;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
 
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- ── Row Level Security ───────────────────────────────────────
+alter table public.profiles      enable row level security;
+alter table public.requests      enable row level security;
+alter table public.matches       enable row level security;
+alter table public.donations     enable row level security;
+alter table public.notifications enable row level security;
 
--- Updated_at trigger function
-CREATE OR REPLACE FUNCTION public.update_updated_at()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = public
-AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$;
+-- profiles: users can read all, edit own
+create policy "profiles_select_all"  on public.profiles for select using (true);
+create policy "profiles_insert_own"  on public.profiles for insert with check (auth.uid() = user_id);
+create policy "profiles_update_own"  on public.profiles for update using (auth.uid() = user_id);
 
--- Apply updated_at triggers
-CREATE TRIGGER update_profiles_updated_at 
-  BEFORE UPDATE ON public.profiles 
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+-- requests: anyone can read, owner can insert/update
+create policy "requests_select_all"  on public.requests for select using (true);
+create policy "requests_insert_auth" on public.requests for insert with check (auth.uid() = user_id);
+create policy "requests_update_own"  on public.requests for update using (auth.uid() = user_id);
 
-CREATE TRIGGER update_requests_updated_at 
-  BEFORE UPDATE ON public.blood_requests 
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+-- matches: donor or requester can see their own
+create policy "matches_select" on public.matches for select
+  using (
+    auth.uid() = donor_id or
+    auth.uid() = (select user_id from public.requests where id = request_id)
+  );
+create policy "matches_insert_auth" on public.matches for insert with check (auth.uid() is not null);
+create policy "matches_update_donor" on public.matches for update using (auth.uid() = donor_id);
 
-CREATE TRIGGER update_acceptances_updated_at 
-  BEFORE UPDATE ON public.donor_acceptances 
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+-- donations: donor can insert/read own
+create policy "donations_select_own" on public.donations for select using (auth.uid() = donor_id);
+create policy "donations_insert_own" on public.donations for insert with check (auth.uid() = donor_id);
 
--- Distance calculation function (Haversine formula)
-CREATE OR REPLACE FUNCTION public.calculate_distance(
-  lat1 DOUBLE PRECISION,
-  lon1 DOUBLE PRECISION,
-  lat2 DOUBLE PRECISION,
-  lon2 DOUBLE PRECISION
-)
-RETURNS DOUBLE PRECISION
-LANGUAGE plpgsql
-IMMUTABLE
-AS $$
-DECLARE
-  R CONSTANT DOUBLE PRECISION := 6371; -- Earth's radius in km
-  dLat DOUBLE PRECISION;
-  dLon DOUBLE PRECISION;
-  a DOUBLE PRECISION;
-  c DOUBLE PRECISION;
-BEGIN
-  dLat := radians(lat2 - lat1);
-  dLon := radians(lon2 - lon1);
-  
-  a := sin(dLat/2) * sin(dLat/2) +
-       cos(radians(lat1)) * cos(radians(lat2)) *
-       sin(dLon/2) * sin(dLon/2);
-  
-  c := 2 * atan2(sqrt(a), sqrt(1-a));
-  
-  RETURN R * c;
-END;
-$$;
+-- notifications: user can read/update own
+create policy "notifications_select_own" on public.notifications for select using (auth.uid() = user_id);
+create policy "notifications_update_own" on public.notifications for update using (auth.uid() = user_id);
+create policy "notifications_insert_auth" on public.notifications for insert with check (auth.uid() is not null);
 
--- ============================================
--- SETUP COMPLETE!
--- ============================================
--- Your database is now ready for the blood donation platform
--- You can now use the application with full functionality
+-- ── Realtime ─────────────────────────────────────────────────
+alter publication supabase_realtime add table public.requests;
+alter publication supabase_realtime add table public.matches;
+alter publication supabase_realtime add table public.notifications;

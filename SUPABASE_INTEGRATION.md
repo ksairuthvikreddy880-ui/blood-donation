@@ -11,16 +11,16 @@ The Blood Donation Platform uses Supabase as the backend for:
 ## Current Configuration
 
 ### Project Details
-- **Project ID**: `nzdcucibnzzunxtljmto`
-- **Project URL**: `https://nzdcucibnzzunxtljmto.supabase.co`
-- **Publishable Key**: `sb_publishable_kKUWHq8pZxRY9DINLPt8bg_CaveEo21`
+- **Project ID**: `YOUR_PROJECT_ID`
+- **Project URL**: `https://YOUR_PROJECT_ID.supabase.co`
+- **Publishable Key**: `YOUR_ANON_KEY`
 
 ### Environment Variables
 
 ```
-VITE_SUPABASE_PROJECT_ID=nzdcucibnzzunxtljmto
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_kKUWHq8pZxRY9DINLPt8bg_CaveEo21
-VITE_SUPABASE_URL=https://nzdcucibnzzunxtljmto.supabase.co
+VITE_SUPABASE_PROJECT_ID=YOUR_PROJECT_ID
+VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_ANON_KEY
+VITE_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
 ```
 
 ## Supabase Client Setup
@@ -245,9 +245,9 @@ try {
 
 Add to Vercel project settings:
 ```
-VITE_SUPABASE_PROJECT_ID=nzdcucibnzzunxtljmto
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_kKUWHq8pZxRY9DINLPt8bg_CaveEo21
-VITE_SUPABASE_URL=https://nzdcucibnzzunxtljmto.supabase.co
+VITE_SUPABASE_PROJECT_ID=YOUR_PROJECT_ID
+VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_ANON_KEY
+VITE_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
 ```
 
 ### Redirect URLs

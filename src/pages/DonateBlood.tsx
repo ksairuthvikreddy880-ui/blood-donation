@@ -17,6 +17,7 @@ import type { LocationResult } from "@/hooks/useLocation";
 interface RequestWithDistance extends BloodRequest {
   distanceKm: number | null;
   requesterName?: string;
+  priority_value?: number;
 }
 
 const URGENCY_STYLE: Record<string, string> = {
@@ -90,7 +91,11 @@ export default function DonateBlood() {
           if (donorLat && donorLon && req.latitude && req.longitude) {
             distanceKm = Math.round(haversine(donorLat, donorLon, req.latitude, req.longitude) * 10) / 10;
           }
-          return { ...req, distanceKm };
+          
+          // Calculate priority value
+          const priorityValue = req.urgency === 'critical' ? 3 : req.urgency === 'urgent' ? 2 : 1;
+          
+          return { ...req, distanceKm, priority_value: priorityValue };
         })
         .filter((req: RequestWithDistance) => {
           // If requester set a radius and we have distance, only show if within radius
@@ -101,12 +106,18 @@ export default function DonateBlood() {
           return true; // no location data — show anyway
         })
         .sort((a: RequestWithDistance, b: RequestWithDistance) => {
-          // Sort: critical first, then by distance
-          const urgencyOrder: Record<string, number> = { critical: 0, urgent: 1, normal: 2 };
-          const uDiff = (urgencyOrder[a.urgency] ?? 2) - (urgencyOrder[b.urgency] ?? 2);
-          if (uDiff !== 0) return uDiff;
-          if (a.distanceKm !== null && b.distanceKm !== null) return a.distanceKm - b.distanceKm;
-          return 0;
+          // PRIORITY-FIRST SORTING: Critical cases always appear first
+          // 1. Sort by priority (descending) - higher priority first
+          const priorityDiff = (b.priority_value ?? 1) - (a.priority_value ?? 1);
+          if (priorityDiff !== 0) return priorityDiff;
+          
+          // 2. Within same priority, sort by distance (ascending) - closer first
+          if (a.distanceKm !== null && b.distanceKm !== null) {
+            return a.distanceKm - b.distanceKm;
+          }
+          
+          // 3. If no distance data, sort by created_at (newest first)
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         });
 
       setRequests(enriched);
@@ -279,10 +290,28 @@ export default function DonateBlood() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.04 }}
-                      className={`bg-card border-2 rounded-2xl p-5 shadow-soft ${
-                        req.urgency === "critical" ? "border-red-200" :
+                      className={`bg-card border-2 rounded-2xl p-5 shadow-soft relative ${
+                        req.urgency === "critical" ? "border-red-300 shadow-red-100 shadow-lg" :
                         req.urgency === "urgent" ? "border-orange-200" : "border-border"
                       }`}>
+
+                      {/* Critical Priority Indicator */}
+                      {req.urgency === "critical" && (
+                        <div className="absolute -top-2 -right-2 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+                          🚨 HIGH PRIORITY
+                        </div>
+                      )}
+
+                      {/* Priority Rank Badge (for top 3) */}
+                      {idx < 3 && (
+                        <div className={`absolute -top-2 -left-2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-lg ${
+                          idx === 0 ? "bg-red-500 text-white" :
+                          idx === 1 ? "bg-orange-500 text-white" :
+                          "bg-yellow-500 text-white"
+                        }`}>
+                          #{idx + 1}
+                        </div>
+                      )}
 
                       {/* Top row */}
                       <div className="flex items-start justify-between mb-4">

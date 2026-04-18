@@ -4,6 +4,7 @@ import { X, Loader2, CheckCircle, Droplets, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import type { UrgencyLevel } from "@/integrations/supabase/types";
 import LocationPicker from "./LocationPicker";
 import type { LocationResult } from "@/hooks/useLocation";
@@ -87,14 +88,74 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
         requester_phone: form.phone.trim(),
       } as any);
 
-      // Match & notify available donors
-      const matches = await db.matches.createForRequest(request.id, form.bloodGroup);
+      // SMART NOTIFICATION SYSTEM: Notify different numbers based on priority
+      // Fetch all available donors with matching blood group
+      const { data: allDonors, error: donorsError } = await (supabase as any)
+        .from("users")
+        .select("*")
+        .eq("blood_group", form.bloodGroup)
+        .eq("is_available", true);
+
+      if (donorsError) throw donorsError;
+
+      // Calculate distance and rank donors
+      const rankedDonors = (allDonors ?? [])
+        .map((donor: any) => {
+          let distanceKm: number | null = null;
+          if (form.latitude && form.longitude && donor.latitude && donor.longitude) {
+            const R = 6371;
+            const dLat = ((donor.latitude - form.latitude) * Math.PI) / 180;
+            const dLon = ((donor.longitude - form.longitude) * Math.PI) / 180;
+            const a =
+              Math.sin(dLat / 2) ** 2 +
+              Math.cos((form.latitude * Math.PI) / 180) *
+                Math.cos((donor.latitude * Math.PI) / 180) *
+                Math.sin(dLon / 2) ** 2;
+            distanceKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          }
+          return { ...donor, distanceKm };
+        })
+        .sort((a: any, b: any) => {
+          // Sort by distance (closer first)
+          if (a.distanceKm !== null && b.distanceKm !== null) {
+            return a.distanceKm - b.distanceKm;
+          }
+          return 0;
+        });
+
+      // Select top N donors based on urgency
+      const notifyCount = form.urgency === 'critical' ? 10 : form.urgency === 'urgent' ? 5 : 3;
+      const topDonors = rankedDonors.slice(0, notifyCount);
+
+      // Create matches for top donors only
+      const matchPromises = topDonors.map((donor: any) =>
+        (supabase as any).from("matches").insert({
+          request_id: request.id,
+          donor_id: donor.auth_id,
+          status: "pending",
+        })
+      );
+      await Promise.all(matchPromises);
+
+      // Send priority-based notifications
+      const notificationTitle = form.urgency === 'critical' 
+        ? `🚨 CRITICAL: ${form.bloodGroup} Blood Needed!`
+        : form.urgency === 'urgent'
+        ? `⚡ URGENT: ${form.bloodGroup} Blood Request`
+        : `🩸 ${form.bloodGroup} Blood Request`;
+
+      const notificationMessage = form.urgency === 'critical'
+        ? `Life-threatening emergency! ${form.bloodGroup} blood needed immediately${form.city ? ` in ${form.city}` : ""}. You're one of ${notifyCount} top-matched donors.`
+        : form.urgency === 'urgent'
+        ? `Urgent blood request! ${form.bloodGroup} needed${form.city ? ` in ${form.city}` : ""}. You're one of ${notifyCount} top-matched donors.`
+        : `${form.bloodGroup} blood needed${form.city ? ` in ${form.city}` : ""}. You're one of ${notifyCount} top-matched donors.`;
+
       await Promise.all(
-        matches.map((m: any) =>
+        topDonors.map((donor: any) =>
           db.notifications.create({
-            user_id: m.donor_id,
-            title: `🩸 ${form.urgency === "critical" ? "🚨 Critical" : "New"} Blood Request`,
-            message: `${form.bloodGroup} blood needed${form.city ? ` in ${form.city}` : ""}.`,
+            user_id: donor.auth_id,
+            title: notificationTitle,
+            message: notificationMessage,
             type: "match",
             request_id: request.id,
           })
@@ -102,7 +163,10 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
       );
 
       setSuccess(true);
-      toast({ title: "Request submitted!", description: `${matches.length} donor(s) notified.` });
+      toast({ 
+        title: "Request submitted!", 
+        description: `${topDonors.length} top-matched donor(s) notified based on ${form.urgency} priority.` 
+      });
       setTimeout(() => {
         setSuccess(false);
         onClose();
@@ -197,23 +261,60 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
                     )}
                   </div>
 
-                  {/* Urgency + Units */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1.5">Urgency</label>
-                      <select value={form.urgency} onChange={e => setForm(f => ({ ...f, urgency: e.target.value as UrgencyLevel }))}
-                        className="w-full px-3 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                        <option value="normal">Normal</option>
-                        <option value="urgent">Urgent</option>
-                        <option value="critical">Critical 🚨</option>
-                      </select>
+                  {/* Emergency Level - Enhanced */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Emergency Level * <span className="text-xs text-muted-foreground font-normal">(affects notification priority)</span>
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, urgency: 'normal' }))}
+                        className={`py-3 px-3 rounded-xl text-sm font-semibold transition-all border-2 ${
+                          form.urgency === 'normal'
+                            ? "bg-green-50 border-green-500 text-green-700 shadow-md"
+                            : "bg-secondary border-border text-foreground hover:border-green-300"
+                        }`}
+                      >
+                        <div className="text-2xl mb-1">🟢</div>
+                        <div>Normal</div>
+                        <div className="text-xs opacity-70 mt-1">Top 3 notified</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, urgency: 'urgent' }))}
+                        className={`py-3 px-3 rounded-xl text-sm font-semibold transition-all border-2 ${
+                          form.urgency === 'urgent'
+                            ? "bg-orange-50 border-orange-500 text-orange-700 shadow-md"
+                            : "bg-secondary border-border text-foreground hover:border-orange-300"
+                        }`}
+                      >
+                        <div className="text-2xl mb-1">🟡</div>
+                        <div>Urgent</div>
+                        <div className="text-xs opacity-70 mt-1">Top 5 notified</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, urgency: 'critical' }))}
+                        className={`py-3 px-3 rounded-xl text-sm font-semibold transition-all border-2 ${
+                          form.urgency === 'critical'
+                            ? "bg-red-50 border-red-500 text-red-700 shadow-lg animate-pulse"
+                            : "bg-secondary border-border text-foreground hover:border-red-300"
+                        }`}
+                      >
+                        <div className="text-2xl mb-1">🔴</div>
+                        <div>Critical</div>
+                        <div className="text-xs opacity-70 mt-1">Top 10 notified</div>
+                      </button>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1.5">Units Needed</label>
-                      <input type="number" min={1} max={10} value={form.units}
-                        onChange={e => setForm(f => ({ ...f, units: parseInt(e.target.value) || 1 }))}
-                        className="w-full px-3 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-                    </div>
+                  </div>
+
+                  {/* Units */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Units Needed</label>
+                    <input type="number" min={1} max={10} value={form.units}
+                      onChange={e => setForm(f => ({ ...f, units: parseInt(e.target.value) || 1 }))}
+                      className="w-full px-3 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                   </div>
 
                   {/* Hospital */}

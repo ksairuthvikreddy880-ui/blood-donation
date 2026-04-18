@@ -43,7 +43,7 @@ const Footer = () => {
             </div>
             <div className="mt-6 p-4 rounded-xl bg-primary/10 border border-primary/20">
               <p className="text-sm text-primary font-medium">
-                🚨 In a life-threatening emergency, always call 911 first.
+                🚨 In a life-threatening emergency, always call 102 first.
               </p>
             </div>
           </div>

@@ -118,7 +118,8 @@ export const db = {
         .in("status", ["pending", "accepted"])
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      // Filter out matches where the donor is also the requester
+      return (data ?? []).filter((m: any) => m.request?.user_id !== authId);
     },
 
     async updateStatus(matchId: string, status: MatchStatus) {

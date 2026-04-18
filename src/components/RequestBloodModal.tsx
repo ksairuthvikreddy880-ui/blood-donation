@@ -90,12 +90,13 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
       } as any);
 
       // SMART NOTIFICATION SYSTEM: Notify different numbers based on priority
-      // Fetch all available donors with matching blood group
+      // Fetch all available donors with matching blood group (exclude self)
       const { data: allDonors, error: donorsError } = await (supabase as any)
         .from("users")
         .select("*")
         .eq("blood_group", form.bloodGroup)
-        .eq("is_available", true);
+        .eq("is_available", true)
+        .neq("auth_id", user.id);
 
       if (donorsError) throw donorsError;
 

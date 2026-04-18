@@ -66,10 +66,7 @@ const Navbar = () => {
           <button onClick={() => scrollTo("trust")} className={`${hoverCls} transition-colors duration-300`}>Why Trust Us</button>
           <button onClick={() => scrollTo("stats")} className={`${hoverCls} transition-colors duration-300`}>Impact</button>
           {user && (
-            <>
-              <Link to="/blood-centres" className={`${hoverCls} transition-colors duration-300`}>Blood Centres</Link>
-              <Link to="/blood-exchange" className={`${hoverCls} transition-colors duration-300`}>Blood Exchange</Link>
-            </>
+            <Link to="/blood-exchange" className={`${hoverCls} transition-colors duration-300`}>Blood Exchange</Link>
           )}
         </div>
 
@@ -122,10 +119,7 @@ const Navbar = () => {
               <button onClick={() => scrollTo("trust")} className="block w-full text-left text-foreground font-medium">Why Trust Us</button>
               <button onClick={() => scrollTo("stats")} className="block w-full text-left text-foreground font-medium">Impact</button>
               {user && (
-                <>
-                  <Link to="/blood-centres" className="block text-foreground font-medium" onClick={() => setOpen(false)}>Blood Centres</Link>
-                  <Link to="/blood-exchange" className="block text-foreground font-medium" onClick={() => setOpen(false)}>Blood Exchange</Link>
-                </>
+                <Link to="/blood-exchange" className="block text-foreground font-medium" onClick={() => setOpen(false)}>Blood Exchange</Link>
               )}
               <hr className="border-border" />
               {user ? (

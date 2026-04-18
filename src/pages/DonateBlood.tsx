@@ -406,8 +406,8 @@ export default function DonateBlood() {
                             ? <><CheckCircle className="w-4 h-4" /> Accepted</>
                             : <><Heart className="w-4 h-4" fill="currentColor" /> I Can Donate</>}
                         </button>
-                        {/* WhatsApp button — always visible if requester has phone */}
-                        {(req as any).requester_phone && (
+                        {/* WhatsApp button — only visible if requester has phone AND donor is eligible */}
+                        {(req as any).requester_phone && donorEligible && (
                           <button
                             onClick={() => openWhatsApp(req, profile?.phone || donorPhone || "")}
                             className="px-3 py-2.5 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-400 transition-colors flex items-center gap-1"

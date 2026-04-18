@@ -16,6 +16,7 @@ import HospitalLogin from "./pages/HospitalLogin";
 import HospitalDashboard from "./pages/HospitalDashboard";
 import DonateBlood from "./pages/DonateBlood";
 import RequestDetail from "./pages/RequestDetail";
+import BloodExchange from "./pages/BloodExchange";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/request/:id" element={<ProtectedRoute><RequestDetail /></ProtectedRoute>} />
             <Route path="/blood-requests" element={<ProtectedRoute><BloodRequests /></ProtectedRoute>} />
             <Route path="/blood-centres" element={<ProtectedRoute><BloodCentres /></ProtectedRoute>} />
+            <Route path="/blood-exchange" element={<ProtectedRoute><BloodExchange /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

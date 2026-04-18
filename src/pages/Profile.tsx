@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
+import { isEligible, nextEligibleDate, daysUntilEligible } from "@/lib/eligibility";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -28,10 +29,11 @@ export default function Profile() {
     city: "",
     blood_group: "",
     role: "donor",
+    last_donated_at: "",
   });
 
   useEffect(() => {
-    if (loading) return; // wait for auth to resolve
+    if (loading) return;
     if (!user) { navigate("/auth"); return; }
     if (profile) {
       setForm({
@@ -40,6 +42,7 @@ export default function Profile() {
         city: profile.city ?? "",
         blood_group: profile.blood_group ?? "",
         role: profile.role ?? "donor",
+        last_donated_at: profile.last_donated_at ? profile.last_donated_at.split("T")[0] : "",
       });
       setIsAvailable(profile.is_available ?? false);
     }
@@ -56,6 +59,7 @@ export default function Profile() {
         city: form.city || null,
         blood_group: form.blood_group || null,
         role: form.role as any,
+        last_donated_at: form.last_donated_at || null,
       });
       await refreshProfile();
       setSaved(true);
@@ -155,6 +159,32 @@ export default function Profile() {
           ))}
         </div>
 
+        {/* Eligibility status */}
+        {(() => {
+          const eligible = isEligible(profile?.last_donated_at);
+          const next = nextEligibleDate(profile?.last_donated_at);
+          const days = daysUntilEligible(profile?.last_donated_at);
+          return (
+            <div className={`flex items-center gap-3 p-3 rounded-xl mb-6 text-sm font-medium ${
+              eligible
+                ? "bg-green-50 border border-green-200 text-green-700"
+                : "bg-orange-50 border border-orange-200 text-orange-700"
+            }`}>
+              <span className="text-xl">{eligible ? "✅" : "⏳"}</span>
+              <div>
+                {eligible
+                  ? "You are eligible to donate blood."
+                  : `Not eligible yet — ${days} day${days !== 1 ? "s" : ""} remaining.`}
+                {next && !eligible && (
+                  <p className="text-xs mt-0.5 opacity-80">
+                    Next eligible date: {next.toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Edit form */}
         <form onSubmit={handleSave} className="space-y-4">
           <h2 className="font-display text-lg font-semibold text-foreground">Edit Details</h2>
@@ -178,6 +208,22 @@ export default function Profile() {
                 <option value="">Select blood group</option>
                 {BLOOD_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Last Donation Date <span className="text-xs text-muted-foreground font-normal">(leave blank if never donated)</span>
+            </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="date"
+                value={form.last_donated_at}
+                max={new Date().toISOString().split("T")[0]}
+                onChange={e => setForm({ ...form, last_donated_at: e.target.value })}
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+              />
             </div>
           </div>
 

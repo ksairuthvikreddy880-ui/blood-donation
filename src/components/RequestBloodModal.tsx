@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
+import { isEligible } from "@/lib/eligibility";
 import type { UrgencyLevel } from "@/integrations/supabase/types";
 import LocationPicker from "./LocationPicker";
 import type { LocationResult } from "@/hooks/useLocation";
@@ -100,6 +101,7 @@ const RequestBloodModal = ({ isOpen, onClose }: RequestBloodModalProps) => {
 
       // Calculate distance and rank donors
       const rankedDonors = (allDonors ?? [])
+        .filter((donor: any) => isEligible(donor.last_donated_at)) // only eligible donors
         .map((donor: any) => {
           let distanceKm: number | null = null;
           if (form.latitude && form.longitude && donor.latitude && donor.longitude) {

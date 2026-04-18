@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart, ArrowLeft, MapPin, Clock, Loader2,
-  Navigation, CheckCircle, Building2, Droplets, Phone, MessageCircle, X,
+  Navigation, CheckCircle, Building2, Droplets, Phone, MessageCircle, X, AlertTriangle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/db";
 import { haversine } from "@/lib/donorRanking";
+import { isEligible, nextEligibleDate, daysUntilEligible } from "@/lib/eligibility";
 import type { BloodRequest } from "@/integrations/supabase/types";
 import LocationPicker from "@/components/LocationPicker";
 import type { LocationResult } from "@/hooks/useLocation";
@@ -45,6 +46,11 @@ export default function DonateBlood() {
   const [pendingRequest, setPendingRequest] = useState<RequestWithDistance | null>(null);
   const [donorPhone, setDonorPhone] = useState(profile?.phone ?? "");
   const [savingPhone, setSavingPhone] = useState(false);
+
+  // Eligibility
+  const donorEligible = isEligible(profile?.last_donated_at);
+  const nextEligible = nextEligibleDate(profile?.last_donated_at);
+  const daysLeft = daysUntilEligible(profile?.last_donated_at);
 
   const handleLocationDetected = (loc: LocationResult) => {
     setDonorLat(loc.lat);
@@ -266,6 +272,22 @@ export default function DonateBlood() {
           </div>
         </div>
 
+        {/* Eligibility banner */}
+        {!donorEligible && (
+          <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl mb-6">
+            <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-orange-800">You are not eligible to donate yet</p>
+              <p className="text-xs text-orange-700 mt-0.5">
+                Minimum 90-day gap required between donations. {daysLeft} day{daysLeft !== 1 ? "s" : ""} remaining.
+                {nextEligible && (
+                  <> Next eligible date: <span className="font-semibold">{nextEligible.toLocaleDateString()}</span></>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="loader"><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/><div className="loader-square"/></div>
@@ -368,14 +390,18 @@ export default function DonateBlood() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleAccept(req)}
-                          disabled={accepted || acceptingId === req.id}
+                          disabled={accepted || acceptingId === req.id || !donorEligible}
                           className={`flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${
-                            accepted
+                            !donorEligible
+                              ? "bg-orange-100 text-orange-600 cursor-not-allowed"
+                              : accepted
                               ? "bg-green-100 text-green-700 cursor-default"
                               : "bg-primary text-primary-foreground hover:opacity-90"
                           } disabled:opacity-60`}>
                           {acceptingId === req.id
                             ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : !donorEligible
+                            ? <><AlertTriangle className="w-4 h-4" /> Not Eligible Yet</>
                             : accepted
                             ? <><CheckCircle className="w-4 h-4" /> Accepted</>
                             : <><Heart className="w-4 h-4" fill="currentColor" /> I Can Donate</>}

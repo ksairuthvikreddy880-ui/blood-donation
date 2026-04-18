@@ -332,45 +332,8 @@ function SignInForm({ onSwitchToSignUp }: SignInProps) {
       <h2 className="font-display text-2xl font-bold text-foreground text-center mb-1">Welcome Back</h2>
       <p className="text-muted-foreground text-center mb-6 text-sm">Sign in to your account</p>
 
-      <div className="flex gap-2 mb-6">
-        {(["email", "phone"] as const).map(m => (
-          <button key={m} type="button"
-            onClick={() => { setLoginMethod(m); setEmail(""); setPassword(""); setPhone(""); setVerificationStep(false); setVerificationCode(""); }}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors text-sm min-h-[44px] flex items-center justify-center gap-2 ${loginMethod === m ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"}`}
-          >
-            {m === "email" ? <><Mail className="w-4 h-4" /> Email</> : <><Phone className="w-4 h-4" /> Phone</>}
-          </button>
-        ))}
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-4">
-        {verificationStep ? (
-          <>
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-2 text-green-700">
-              <CheckCircle className="w-5 h-5 flex-shrink-0" />
-              <span className="text-sm font-medium">Code sent to {phone}</span>
-            </div>
-            <input type="text" placeholder="Enter 6-digit code" value={verificationCode} onChange={e => setVerificationCode(e.target.value.slice(0, 6))} maxLength={6}
-              className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-center text-2xl tracking-widest" />
-            <button type="submit" disabled={smsLoading || verificationCode.length !== 6}
-              className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-display font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
-              {smsLoading && <Loader2 className="w-5 h-5 animate-spin" />} Verify & Sign In
-            </button>
-            <button type="button" onClick={() => { setVerificationStep(false); setVerificationCode(""); }} className="w-full py-2 text-primary font-medium hover:underline text-sm">Back</button>
-          </>
-        ) : loginMethod === "phone" ? (
-          <>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input type="tel" placeholder="Phone Number (+91XXXXXXXXXX)" value={phone} onChange={e => setPhone(e.target.value)} required
-                className="w-full pl-11 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
-            <button type="submit" disabled={loading}
-              className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-display font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
-              {loading && <Loader2 className="w-5 h-5 animate-spin" />} Send OTP
-            </button>
-          </>
-        ) : (
+        {(
           <>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />

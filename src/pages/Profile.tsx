@@ -8,6 +8,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -71,12 +72,16 @@ export default function Profile() {
     setIsAvailable(newVal); // optimistic update
     setTogglingAvail(true);
     try {
-      await db.users.setAvailability(user.id, newVal);
+      const { error } = await (supabase as any)
+        .from("users")
+        .update({ is_available: newVal, updated_at: new Date().toISOString() })
+        .eq("auth_id", user.id);
+      if (error) throw error;
       await refreshProfile();
-      toast({ title: `You are now ${newVal ? "available" : "unavailable"} for donations` });
+      toast({ title: `You are now ${newVal ? "available ✅" : "unavailable"} for donations` });
     } catch (err: any) {
       setIsAvailable(!newVal); // revert on error
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: "Error saving availability", description: err.message, variant: "destructive" });
     } finally { setTogglingAvail(false); }
   };
 
@@ -194,6 +199,39 @@ export default function Profile() {
                 placeholder="Your city"
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm" />
             </div>
+          </div>
+
+          {/* Location detect — saves lat/lon for ETA calculation */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Your Location <span className="text-xs text-muted-foreground font-normal">(required for ETA & donor matching)</span>
+            </label>
+            <button type="button"
+              onClick={async () => {
+                if (!navigator.geolocation || !user) return;
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                  const { latitude: lat, longitude: lon } = pos.coords;
+                  // Reverse geocode
+                  try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`, { headers: { "Accept-Language": "en" } });
+                    const data = await res.json();
+                    const city = data.address?.city || data.address?.town || data.address?.village || "";
+                    setForm(f => ({ ...f, city: city || f.city }));
+                  } catch {}
+                  // Save to DB
+                  await (supabase as any).from("users")
+                    .update({ latitude: lat, longitude: lon, updated_at: new Date().toISOString() })
+                    .eq("auth_id", user.id);
+                  await refreshProfile();
+                  toast({ title: "📍 Location saved!", description: "Your coordinates are now stored for ETA calculation." });
+                }, () => toast({ title: "Location denied", variant: "destructive" }), { enableHighAccuracy: true });
+              }}
+              className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-medium transition-colors ${
+                profile?.latitude ? "border-green-500 bg-green-50 text-green-700" : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+              }`}>
+              <MapPin className="w-4 h-4" />
+              {profile?.latitude ? `✓ Location saved (${profile.latitude?.toFixed(4)}, ${profile.longitude?.toFixed(4)})` : "Detect & Save My Location"}
+            </button>
           </div>
 
           <div>

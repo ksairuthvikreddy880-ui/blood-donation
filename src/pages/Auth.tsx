@@ -426,6 +426,11 @@ const Auth = () => {
       {/* ── Left column: form ── */}
       <div className="w-full md:w-1/2 flex flex-col items-center justify-center px-6 py-10 md:px-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+          {/* Back button */}
+          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
+            <ArrowLeft className="w-4 h-4" /> Back to Home
+          </Link>
+
           <Link to="/" className="flex items-center gap-2 justify-center mb-8">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <Heart className="w-5 h-5 text-primary-foreground" fill="currentColor" />

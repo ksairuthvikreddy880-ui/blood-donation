@@ -3,9 +3,8 @@
 -- Run this in Supabase SQL Editor
 -- ============================================================
 
--- ── users table: add missing columns ─────────────────────────
+-- ── users table: ensure all columns exist ────────────────────
 alter table public.users
-  add column if not exists id uuid primary key default gen_random_uuid(),
   add column if not exists auth_id uuid unique references auth.users(id) on delete cascade,
   add column if not exists is_available boolean not null default true,
   add column if not exists city text,
@@ -18,7 +17,7 @@ alter table public.users
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
 
--- ── requests table: add missing columns ──────────────────────
+-- ── requests table: ensure all columns exist ─────────────────
 alter table public.requests
   add column if not exists status text not null default 'pending',
   add column if not exists units_needed integer not null default 1,
@@ -30,17 +29,20 @@ alter table public.requests
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
 
--- ── matches table: add missing columns ───────────────────────
+-- ── matches table: ensure all columns exist ──────────────────
 alter table public.matches
+  add column if not exists status text not null default 'pending',
+  add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now();
 
--- ── notifications table: add missing columns ─────────────────
+-- ── notifications table: ensure all columns exist ────────────
 alter table public.notifications
   add column if not exists title text not null default '',
+  add column if not exists is_read boolean not null default false,
   add column if not exists request_id uuid references public.requests(id) on delete set null,
-  add column if not exists updated_at timestamptz not null default now();
+  add column if not exists created_at timestamptz not null default now();
 
--- ── donations table: add missing columns ─────────────────────
+-- ── donations table: ensure all columns exist ────────────────
 alter table public.donations
   add column if not exists notes text,
   add column if not exists created_at timestamptz not null default now();
@@ -50,14 +52,17 @@ create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end; $$;
 
+drop trigger if exists trg_users_updated_at on public.users;
 create trigger trg_users_updated_at
   before update on public.users
   for each row execute function public.set_updated_at();
 
+drop trigger if exists trg_requests_updated_at on public.requests;
 create trigger trg_requests_updated_at
   before update on public.requests
   for each row execute function public.set_updated_at();
 
+drop trigger if exists trg_matches_updated_at on public.matches;
 create trigger trg_matches_updated_at
   before update on public.matches
   for each row execute function public.set_updated_at();
@@ -131,7 +136,13 @@ create policy "notifications_select_own"  on public.notifications for select usi
 create policy "notifications_update_own"  on public.notifications for update using (auth.uid() = user_id);
 create policy "notifications_insert_auth" on public.notifications for insert with check (auth.uid() is not null);
 
--- ── Realtime ─────────────────────────────────────────────────
-alter publication supabase_realtime add table public.requests;
-alter publication supabase_realtime add table public.matches;
-alter publication supabase_realtime add table public.notifications;
+-- ── Realtime (skip if already added) ────────────────────────
+do $$ begin
+  alter publication supabase_realtime add table public.requests;
+exception when others then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.matches;
+exception when others then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.notifications;
+exception when others then null; end $$;

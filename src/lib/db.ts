@@ -129,9 +129,14 @@ export const db = {
 
     async accept(matchId: string, requestId: string, donorAuthId: string) {
       await db.matches.updateStatus(matchId, "accepted");
-      // Set accepted_by so requester can fetch donor details
+      // Set accepted_by + donor_id so requester can fetch donor details
       const { error } = await sb.from("requests")
-        .update({ status: "accepted", accepted_by: donorAuthId, updated_at: new Date().toISOString() })
+        .update({
+          status: "accepted",
+          accepted_by: donorAuthId,
+          donor_id: donorAuthId,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", requestId);
       if (error) throw error;
       const { data: req } = await sb.from("requests")
@@ -145,6 +150,55 @@ export const db = {
           request_id: requestId,
         });
       }
+    },
+
+    async acceptWithETA(
+      matchId: string,
+      requestId: string,
+      donorAuthId: string,
+      donorLat: number | null,
+      donorLon: number | null,
+    ) {
+      // Fetch request location for ETA
+      const { data: req } = await sb.from("requests")
+        .select("user_id, blood_group, latitude, longitude, requester_phone")
+        .eq("id", requestId).single();
+
+      let etaMinutes: number | null = null;
+      let distanceKm: number | null = null;
+
+      if (donorLat && donorLon && req?.latitude && req?.longitude) {
+        const { haversine } = await import("@/lib/donorRanking");
+        distanceKm = Math.round(haversine(donorLat, donorLon, req.latitude, req.longitude) * 10) / 10;
+        etaMinutes = Math.round((distanceKm / 30) * 60); // assume 30 km/h
+      }
+
+      await db.matches.updateStatus(matchId, "accepted");
+
+      const { error } = await sb.from("requests")
+        .update({
+          status: "accepted",
+          accepted_by: donorAuthId,
+          donor_id: donorAuthId,
+          eta_minutes: etaMinutes,
+          distance_km: distanceKm,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+      if (error) throw error;
+
+      if (req) {
+        const etaText = etaMinutes ? ` Estimated arrival: ~${etaMinutes} min.` : "";
+        await db.notifications.create({
+          user_id: req.user_id,
+          title: "🎉 Donor is on the way!",
+          message: `A donor accepted your ${req.blood_group} request and is heading to you.${etaText}`,
+          type: "accepted",
+          request_id: requestId,
+        });
+      }
+
+      return { etaMinutes, distanceKm, requesterPhone: req?.requester_phone ?? null, bloodGroup: req?.blood_group ?? "" };
     },
 
     async reject(matchId: string) {

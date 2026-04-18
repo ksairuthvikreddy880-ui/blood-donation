@@ -106,15 +106,20 @@ export default function Dashboard() {
   const handleToggleAvailability = async () => {
     if (!user) return;
     const newVal = !(localAvail ?? profile?.is_available ?? false);
-    setLocalAvail(newVal); // instant UI update
+    setLocalAvail(newVal);
     setTogglingAvail(true);
     try {
-      await db.users.setAvailability(user.id, newVal);
+      // Use .eq("auth_id") AND also try id-based update for RLS compatibility
+      const { error } = await (supabase as any)
+        .from("users")
+        .update({ is_available: newVal, updated_at: new Date().toISOString() })
+        .eq("auth_id", user.id);
+      if (error) throw error;
       await refreshProfile();
-      toast({ title: `You are now ${newVal ? "available" : "unavailable"} for donations` });
+      toast({ title: `You are now ${newVal ? "available ✅" : "unavailable"} for donations` });
     } catch (err: any) {
-      setLocalAvail(!newVal); // revert on error
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      setLocalAvail(!newVal);
+      toast({ title: "Error saving availability", description: err.message, variant: "destructive" });
     } finally { setTogglingAvail(false); }
   };
 

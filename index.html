@@ -3,22 +3,44 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
-    <title>Lovable App</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+    <title>Instant Blood Connect</title>
+    <script>
+      const originalTitle = "Instant Blood Connect";
+      const messages = [
+        "🚨 Emergency Blood Needed!",
+        "🩸 Donors Needed Nearby",
+        "🏥 Hospital Request Pending",
+        "⚡ Come Back – Lives Depend on It"
+      ];
+      let i = 0, interval;
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          interval = setInterval(() => {
+            document.title = messages[i % messages.length];
+            i++;
+          }, 1500);
+        } else {
+          clearInterval(interval);
+          document.title = originalTitle;
+        }
+      });
+    </script>
+    <meta name="description" content="Find verified blood donors near you in seconds. Every second counts when saving a life." />
+    <meta name="author" content="Instant Blood Connect" />
 
-    <!-- TODO: Update og:title to match your application name -->
-    <meta property="og:title" content="Lovable App" />
-    <meta property="og:description" content="Lovable Generated Project" />
+    <!-- Favicon — red heart SVG, no external file needed -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23dc2626'/><path d='M50 75 C50 75 20 55 20 35 C20 25 28 18 38 20 C43 21 47 25 50 30 C53 25 57 21 62 20 C72 18 80 25 80 35 C80 55 50 75 50 75Z' fill='white'/></svg>" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Instant Blood Connect" />
+    <meta property="og:description" content="Find verified blood donors near you in seconds. Every second counts when saving a life." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Instant Blood Connect" />
+    <meta name="twitter:description" content="Find verified blood donors near you in seconds." />
   </head>
-
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

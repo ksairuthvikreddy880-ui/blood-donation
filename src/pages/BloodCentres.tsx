@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import {
   MapPin, List, Navigation, Phone, Clock, Droplets, Search,
   Loader2, AlertCircle, Map as MapIcon, Building2, X, RefreshCw, Star, ExternalLink
@@ -459,6 +460,16 @@ const BloodCentres = () => {
       </nav>
 
       <div className="container max-w-7xl mx-auto px-4 py-6">
+        {/* Animation space */}
+        <div id="blood-centres-animation" className="w-full mb-6 rounded-2xl overflow-hidden flex items-center justify-center">
+          <DotLottieReact
+            src="/nurse-animation.lottie"
+            loop={false}
+            autoplay
+            style={{ width: "100%", maxWidth: 500, height: 180 }}
+          />
+        </div>
+
         {/* Location error */}
         {locError && (
           <div className="mb-4 bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3">

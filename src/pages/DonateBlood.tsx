@@ -36,6 +36,9 @@ export default function DonateBlood() {
   const [detectedAddress, setDetectedAddress] = useState("");
   const [acceptedIds, setAcceptedIds] = useState<Set<string>>(new Set());
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  // Confirmation modal
+  const [confirmRequest, setConfirmRequest] = useState<RequestWithDistance | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
   // Phone validation popup
   const [showPhonePopup, setShowPhonePopup] = useState(false);
   const [pendingRequest, setPendingRequest] = useState<RequestWithDistance | null>(null);
@@ -47,6 +50,19 @@ export default function DonateBlood() {
     setDonorLon(loc.lon);
     setDetectedAddress(loc.fullAddress);
   };
+
+  useEffect(() => {
+    // Auto-detect location on page load
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setDonorLat(pos.coords.latitude);
+          setDonorLon(pos.coords.longitude);
+        },
+        () => {} // silent fail — user can manually detect
+      );
+    }
+  }, []);
 
   useEffect(() => {
     loadRequests();
@@ -125,16 +141,21 @@ export default function DonateBlood() {
 
   const handleAccept = async (req: RequestWithDistance) => {
     if (!user) return;
+    // Show confirmation modal first
+    setConfirmRequest(req);
+    setConfirmed(false);
+  };
 
-    // Check donor has phone
+  const handleConfirmProceed = async () => {
+    if (!confirmRequest || !user) return;
+    setConfirmRequest(null);
     const currentPhone = profile?.phone || donorPhone;
     if (!currentPhone) {
-      setPendingRequest(req);
+      setPendingRequest(confirmRequest);
       setShowPhonePopup(true);
       return;
     }
-
-    await doAccept(req, currentPhone);
+    await doAccept(confirmRequest, currentPhone);
   };
 
   const doAccept = async (req: RequestWithDistance, phone: string) => {
@@ -145,13 +166,32 @@ export default function DonateBlood() {
         .insert({ request_id: req.id, donor_id: user!.id, status: "pending" })
         .select().single();
 
-      if (match) await db.matches.accept(match.id, req.id, user!.id);
+      // Use full pipeline: ETA + notification + status update
+      const result = match
+        ? await db.matches.acceptWithETA(match.id, req.id, user!.id, donorLat, donorLon)
+        : null;
 
       setAcceptedIds(prev => new Set([...prev, req.id]));
-      toast({ title: "✅ Request accepted!" });
 
-      // Open WhatsApp
-      openWhatsApp(req, phone);
+      // Toast with ETA if available
+      if (result?.etaMinutes) {
+        toast({ title: "✅ Accepted!", description: `Estimated arrival: ~${result.etaMinutes} min (${result.distanceKm} km away)` });
+      } else {
+        toast({ title: "✅ Request accepted!", description: "The requester has been notified." });
+      }
+
+      // Open WhatsApp with ETA in message
+      const requesterPhone = (req as any).requester_phone || result?.requesterPhone;
+      if (requesterPhone) {
+        const cleaned = requesterPhone.replace(/[\s\-()]/g, "");
+        const number = cleaned.startsWith("+") ? cleaned.slice(1) : cleaned.startsWith("0") ? "91" + cleaned.slice(1) : cleaned;
+        const etaText = result?.etaMinutes ? ` I will arrive in approximately ${result.etaMinutes} minutes.` : "";
+        const message = encodeURIComponent(
+          `Hello, I am available to donate ${req.blood_group} blood. I am on the way.${etaText} My phone: ${phone}.`
+        );
+        toast({ title: "📱 Opening WhatsApp…" });
+        window.open(`https://wa.me/${number}?text=${message}`, "_blank");
+      }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -329,6 +369,93 @@ export default function DonateBlood() {
           </>
         )}
       </div>
+
+      {/* Confirmation modal */}
+      <AnimatePresence>
+        {confirmRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm shadow-elevated"
+            >
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xl">⚠️</span>
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-bold text-foreground">Confirm Before Proceeding</h3>
+                  <p className="text-xs text-muted-foreground">Please read carefully</p>
+                </div>
+              </div>
+
+              {/* Request summary */}
+              <div className="bg-secondary rounded-xl p-3 mb-4 flex items-center gap-3">
+                <span className="font-display font-bold text-2xl text-primary">{confirmRequest.blood_group}</span>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{confirmRequest.hospital_name ?? "Blood needed"}</p>
+                  <p className="text-xs text-muted-foreground">{confirmRequest.location ?? ""}</p>
+                </div>
+              </div>
+
+              {/* Checklist */}
+              <div className="space-y-2 mb-4">
+                {[
+                  "Ensure you have a stable internet connection",
+                  "Make sure your phone is reachable",
+                  "Only proceed if you are ready to donate",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm text-foreground">
+                    <CheckCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              {/* Emergency emphasis */}
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+                <p className="text-xs text-red-700 font-medium text-center">
+                  This is an emergency request. Please proceed responsibly.
+                </p>
+              </div>
+
+              {/* Checkbox */}
+              <label className="flex items-start gap-3 cursor-pointer mb-5 p-3 bg-secondary rounded-xl">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={e => setConfirmed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-primary"
+                />
+                <span className="text-sm text-foreground">
+                  I confirm that I am available and ready to donate
+                </span>
+              </label>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setConfirmRequest(null); setConfirmed(false); }}
+                  className="flex-1 py-2.5 border border-border text-foreground rounded-xl text-sm font-medium hover:bg-secondary transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmProceed}
+                  disabled={!confirmed}
+                  className="flex-1 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Heart className="w-4 h-4" fill="currentColor" />
+                  Continue
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Phone number popup */}
       <AnimatePresence>
